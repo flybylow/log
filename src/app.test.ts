@@ -50,6 +50,21 @@ test("GET /status returns service metadata", async () => {
   assert.equal(res.body.eventCount, 0);
 });
 
+test("GET / shows dashboard HTML", async () => {
+  const res = await request(app).get("/").expect(200);
+  assert.match(res.text, /dpp-event/);
+  assert.equal(res.headers["content-type"]?.includes("text/html"), true);
+});
+
+test("GET /api/timeline lists events after POST (oldest-first)", async () => {
+  await request(app).post("/events").send(validEvent).expect(201);
+  const res = await request(app).get("/api/timeline").expect(200);
+  assert.equal(res.body.order, "oldest-first");
+  assert.equal(res.body.events.length, 1);
+  assert.equal(res.body.events[0].hash.length, 64);
+  assert.equal(res.body.events[0].classification, "iota");
+});
+
 test("POST /events rejects invalid payload", async () => {
   const res = await request(app)
     .post("/events")

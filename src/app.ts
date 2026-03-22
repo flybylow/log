@@ -7,6 +7,8 @@ import { hashEvent } from "./hash";
 import { classify } from "./classify";
 import { notarize } from "./notarize";
 import { appendToGraph, getGraph } from "./graph";
+import { pushTimelineEntry, getTimeline, resetTimelineForTests } from "./recentTimeline";
+import { renderDashboard } from "./dashboardHtml";
 
 export const app = express();
 
@@ -25,6 +27,7 @@ export function getStatusSnapshot() {
 export function resetStatusForTests() {
   eventCount = 0;
   lastNotarization = null;
+  resetTimelineForTests();
 }
 
 // POST /events
@@ -52,6 +55,21 @@ app.post("/events", async (req, res) => {
 
     eventCount++;
 
+    const epcFirst =
+      (Array.isArray(event.epcList) && event.epcList[0]) ||
+      (Array.isArray(event.inputEPCList) && event.inputEPCList[0]) ||
+      null;
+    pushTimelineEntry({
+      receivedAt: new Date().toISOString(),
+      eventTime: String(event.eventTime),
+      bizStep: typeof event.bizStep === "string" ? event.bizStep : null,
+      type: String(event.type || "ObjectEvent"),
+      hash,
+      classification: classification.target,
+      epcFirst: typeof epcFirst === "string" ? epcFirst : null,
+      triplesAdded: stored.triplesAdded,
+    });
+
     res.status(201).json({
       status: "accepted",
       hash,
@@ -64,6 +82,18 @@ app.post("/events", async (req, res) => {
     console.error("Pipeline error:", err);
     res.status(500).json({ error: "Pipeline failed", message: err.message });
   }
+});
+
+app.get("/api/timeline", (_req, res) => {
+  res.json({ events: getTimeline(), order: "oldest-first" });
+});
+
+app.get("/", (_req, res) => {
+  const frontends =
+    process.env.DASHBOARD_FRONTENDS ||
+    "https://aiactscan.eu (AI Act Scan) · tabulas.eu (read)";
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.send(renderDashboard(getTimeline(), { eventCount, frontends }));
 });
 
 app.get("/graph", (_req, res) => {
