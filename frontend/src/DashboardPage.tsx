@@ -11,6 +11,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type MouseEvent,
 } from "react";
@@ -46,6 +47,8 @@ function formatBytes(n: number): string {
 function DashboardInner() {
   const { nodes, edges, status, timelineEvents, error, loading, reload } = useGraphData();
   const [selected, setSelected] = useState<Node<FlowNodeData> | null>(null);
+  const [sendFormOpen, setSendFormOpen] = useState(false);
+  const prevSendOpen = useRef(false);
 
   const onNodeClick = useCallback(
     (_: MouseEvent, node: Node<FlowNodeData>) => {
@@ -63,6 +66,17 @@ function DashboardInner() {
     }),
     []
   );
+
+  useEffect(() => {
+    if (sendFormOpen && !prevSendOpen.current) {
+      window.requestAnimationFrame(() => {
+        document
+          .getElementById("send-epcis-panel")
+          ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
+    }
+    prevSendOpen.current = sendFormOpen;
+  }, [sendFormOpen]);
 
   return (
     <div className="flex min-h-full flex-col">
@@ -91,6 +105,15 @@ function DashboardInner() {
             </>
           )}
           <div className="ml-auto flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSendFormOpen((o) => !o)}
+              aria-expanded={sendFormOpen}
+              aria-controls="send-epcis-panel"
+              className="rounded-lg border border-emerald-600 bg-emerald-600 px-3 py-1 text-xs font-medium text-white shadow-sm hover:bg-emerald-700 dark:border-emerald-500 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+            >
+              {sendFormOpen ? "Hide send form" : "Send"}
+            </button>
             <ClearGraphButton
               enabled={Boolean(status?.graphResetEnabled)}
               onCleared={() => void reload()}
@@ -111,7 +134,16 @@ function DashboardInner() {
         )}
       </header>
 
-      <SendEventPanel onSent={() => void reload()} />
+      <div
+        className={sendFormOpen ? "block" : "hidden"}
+        aria-hidden={!sendFormOpen}
+      >
+        <SendEventPanel
+          onSent={() => {
+            void reload();
+          }}
+        />
+      </div>
 
       <div className="flex min-h-[420px] flex-1 flex-col lg:min-h-[480px] lg:flex-row">
         <div className="relative min-h-[360px] w-full flex-1 lg:min-h-0">

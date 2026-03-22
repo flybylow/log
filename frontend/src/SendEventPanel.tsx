@@ -119,9 +119,12 @@ export function SendEventPanel({ onSent }: Props) {
   };
 
   return (
-    <section className="border-b border-slate-200 bg-slate-50/80 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+    <section
+      id="send-epcis-panel"
+      className="border-b border-slate-200 bg-slate-50/80 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/50"
+    >
       <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-        1. Send EPCIS event
+        Send EPCIS event
       </h2>
       <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
         Choose a construction-lifecycle sample or edit the JSON. After send, the graph and timeline
