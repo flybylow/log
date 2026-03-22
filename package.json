@@ -4,8 +4,9 @@
   "description": "DPP Event Log Service: EPCIS to IOTA notarization pipeline",
   "main": "dist/server.js",
   "scripts": {
-    "build": "npm run build:frontend && npx tsc",
+    "build": "npm run build:frontend && npm run build:server",
     "build:frontend": "cd frontend && npm ci && npm run build",
+    "build:server": "node node_modules/typescript/bin/tsc",
     "serve": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
     "test": "tsx --test src/validate.test.ts src/hash.test.ts src/classify.test.ts src/transform.test.ts src/corsConfig.test.ts src/wwwRedirect.test.ts src/app.test.ts",

@@ -25,7 +25,7 @@ Order of operations for **dpp-event** (write API at `events.tabulas.eu`).
 
 ## 2. Test before Combell
 
-- **CI:** Pushes to `main` / `master` run `.github/workflows/ci.yml` (`npm ci`, **`npm run build`**, **`npm test`**) on Node 22 — build must succeed (frontend + **`npx tsc`**) before tests run.
+- **CI:** Pushes to `main` / `master` run `.github/workflows/ci.yml` (`npm ci`, **`npm run build`**, **`npm test`**) on Node 22 — build must succeed (frontend + **`build:server`**) before tests run.
 - **Local:** `npm install && npm run build && npm test` (or `npm test` alone if you only changed server code); optional `npm run dev` and `curl` against `POST /events` (see root `README.md`).
 
 **Vercel:** The **read** app (`tabulas.eu`, Next.js + Comunica) belongs on Vercel. **This** service is a long-running Express app with a persisted Turtle file (`data/products.ttl`), so production is **Node on Combell**, not a typical serverless Vercel deploy. Use GitHub Actions + staging on a Node host (or Combell staging) to validate before pointing DNS.
@@ -38,7 +38,7 @@ Official reference: [Getting started with Node.js (Combell)](https://www.combell
 
 1. **Web hosting + Node.js option** — Combell deploys from Git; you need a hosting package where the **Node.js** add-on is enabled (buy/activate it in the shop or control panel if you have not yet).
 2. **Code on GitHub** — The app must already be in a repo (section 1). You will paste the clone URL (HTTPS or SSH) into Combell.
-3. **This repo’s `package.json`** — Combell requires **`build`** and **`serve`** scripts. Here, **`build`** runs **`npm run build:frontend && npx tsc`** (Vite production build → `frontend/dist`, then TypeScript compile → `dist/`), and **`serve`** runs **`node dist/server.js`**. Do not replace `build` with plain **`tsc`** / **`npx tsc`** only — the SPA at **`GET /`** would be missing.
+3. **This repo’s `package.json`** — Combell requires **`build`** and **`serve`** scripts. Here, **`build`** runs **`build:frontend`** then **`build:server`** (`node node_modules/typescript/bin/tsc` → `dist/`), and **`serve`** runs **`node dist/server.js`**. Do not replace `build` with **`build:server`** alone — the SPA at **`GET /`** would be missing. Avoid bare **`npx tsc`** without a local **`typescript`** install: npm may install the wrong **`tsc`** package from the registry.
 
 ### Step A — Add a Node.js instance
 
@@ -106,7 +106,7 @@ Optional: `curl -sS "https://events.tabulas.eu/graph"` for Turtle output.
 | Symptom | What to check |
 |---------|----------------|
 | Pipeline fails on **`npm run build`** | **Node 22** (or test on Node 20 locally). Frontend step needs `frontend/package-lock.json` committed; **`build:frontend`** runs `npm ci` inside `frontend/`. Read the full log for TypeScript or Vite errors. |
-| **`sh: 1: tsc: not found`** or **`npx tsc` fails** | The **root** app must run **`npm ci`** (or **`npm install`**) **including devDependencies** before **`npm run build`** — **`typescript`** is a **devDependency**. Docker/CI must not use **`npm ci --omit=dev`** for the **build** step (use a multi-stage image: build with full install, then prune for runtime). |
+| **`sh: 1: tsc: not found`**, **“not the tsc command you are looking for”**, or **`npx` installs `tsc@2.x`** | The **root** app must run **`npm ci`** (or **`npm install`**) **including devDependencies** before **`npm run build`** so **`node_modules/typescript/`** exists. Docker/CI must not use **`npm ci --omit=dev`** for the **build** step (use a multi-stage image: build with full install, then prune for runtime). This repo uses **`node node_modules/typescript/bin/tsc`**, not **`npx tsc`**, because **`npx tsc`** can pull an unrelated **`tsc`** package when TypeScript is missing. |
 | **`Cannot GET /`** or **“Frontend not built”** | The **`build`** script did not produce **`frontend/dist`**, or the deploy copied **`dist/`** without **`frontend/dist`**. Run **`npm run build`** locally and confirm both **`dist/server.js`** and **`frontend/dist/index.html`** exist before redeploying. |
 | **502 / empty / connection refused** | **`PORT`** in Combell env must **match** the port the reverse proxy uses for this Node instance (often **3000**). The app’s default when **`PORT` is unset** is **3001** (local dev); production should **always set `PORT`** in the panel. |
 | **Browser calls fail with CORS** | Set **`CORS_ORIGINS`** to the **exact** origins (scheme + host, no path), e.g. `https://tabulas.eu,https://aiactscan.eu`. |
