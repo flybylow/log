@@ -109,17 +109,15 @@ curl -X POST http://localhost:3000/events \
   "dependencies": {
     "express": "^4.21.0",
     "n3": "^1.21.3",
-    "jsonld": "^8.3.3",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "typescript": "^5.5.0",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21"
   },
   "devDependencies": {
-    "@types/express": "^4.17.21",
-    "@types/cors": "^2.8.17",
-    "@types/jsonld": "^1.5.15",
     "@types/supertest": "^7.2.0",
     "supertest": "^7.2.2",
-    "typescript": "^5.5.0",
     "tsx": "^4.19.0"
   },
   "engines": {
