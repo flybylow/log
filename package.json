@@ -10,6 +10,7 @@
     "serve": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
     "test": "tsx --test src/validate.test.ts src/hash.test.ts src/classify.test.ts src/transform.test.ts src/corsConfig.test.ts src/wwwRedirect.test.ts src/app.test.ts",
+    "test:frontend": "cd frontend && npx vitest run",
     "smoke": "tsx src/smoke.ts",
     "clear:graph": "tsx scripts/clear-graph.ts",
     "clear:build": "rm -rf dist frontend/dist frontend/node_modules/.vite",

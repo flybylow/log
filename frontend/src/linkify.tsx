@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { resolveHttpUrlForUi } from "./identifierLinks";
 
 const URL_IN_TEXT =
   /(https?:\/\/[^\s<>"')]+|www\.[^\s<>"')]+)/gi;
@@ -18,12 +19,17 @@ export function renderTextWithLinks(text: string, anchorClass = ""): ReactNode {
     if (m.index > last) {
       parts.push(<span key={`t-${key++}`}>{text.slice(last, m.index)}</span>);
     }
-    let href = m[0];
-    if (href.startsWith("www.")) href = `https://${href}`;
+    let raw = m[0];
+    if (raw.startsWith("www.")) raw = `https://${raw}`;
+    const { href, title } =
+      raw.startsWith("http://") || raw.startsWith("https://")
+        ? resolveHttpUrlForUi(raw)
+        : { href: raw, title: raw };
     parts.push(
       <a
         key={`a-${key++}`}
         href={href}
+        title={title}
         target="_blank"
         rel="noopener noreferrer"
         className={anchorClass ? `${linkClass} ${anchorClass}` : linkClass}

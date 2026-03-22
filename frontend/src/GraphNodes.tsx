@@ -2,6 +2,7 @@ import { Handle, Position } from "@xyflow/react";
 import type { Node, NodeProps } from "@xyflow/react";
 import type { FlowNodeData } from "./graphLayout";
 import { CopyableHash, renderTextWithLinks } from "./linkify";
+import { getGraphResourceLinks } from "./identifierLinks";
 
 export type GraphFlowNode = Node<FlowNodeData, "graph">;
 
@@ -49,7 +50,8 @@ export function GraphNode({ id, data }: NodeProps<GraphFlowNode>) {
     (id.startsWith("http://") || id.startsWith("https://"))
       ? id
       : undefined;
-  const resourceHref = data.resourceUrl || eventUri;
+  const resourceUri = data.resourceUrl || eventUri;
+  const resourceLinks = resourceUri ? getGraphResourceLinks(resourceUri) : null;
 
   return (
     <div
@@ -75,16 +77,29 @@ export function GraphNode({ id, data }: NodeProps<GraphFlowNode>) {
           {renderTextWithLinks(data.subtitle, "nodrag")}
         </div>
       )}
-      {!isHash && resourceHref && (
-        <a
-          href={resourceHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="nodrag mt-1 block max-w-full truncate text-[10px] font-medium text-emerald-700 underline decoration-emerald-600/40 underline-offset-2 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
-          title={resourceHref}
-        >
-          {resourceHref.length > 52 ? `${resourceHref.slice(0, 24)}…${resourceHref.slice(-20)}` : resourceHref}
-        </a>
+      {!isHash && resourceLinks && (
+        <div className="nodrag mt-1 flex max-w-full flex-col gap-0.5 text-[10px] font-medium">
+          <a
+            href={resourceLinks.primary.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={resourceLinks.primary.title}
+            className="truncate text-emerald-700 underline decoration-emerald-600/40 underline-offset-2 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
+          >
+            {resourceLinks.primary.line}
+          </a>
+          {resourceLinks.secondary && (
+            <a
+              href={resourceLinks.secondary.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={resourceLinks.secondary.title}
+              className="truncate text-slate-600 underline decoration-slate-400/50 underline-offset-2 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+            >
+              {resourceLinks.secondary.line}
+            </a>
+          )}
+        </div>
       )}
     </div>
   );
