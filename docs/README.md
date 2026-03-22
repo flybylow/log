@@ -9,6 +9,7 @@ All project documentation lives in this folder so the **repository root stays cl
 | [BASE.md](./BASE.md) | Internal knowledge base: conventions, decisions, and facts to preserve |
 | [graph-and-cache-reset.md](./graph-and-cache-reset.md) | Empty persisted graph + clear `dist` / Vite cache (`npm run clear:cache`) |
 | [deployment-setup.md](./deployment-setup.md) | GitHub repo, CI, Combell production checklist + **Troubleshooting (Combell)** |
+| [docker.md](./docker.md) | Multi-stage **Dockerfile**, **`docker compose`**, build vs runtime deps |
 | [dpp-event-developer-handoff.md](./dpp-event-developer-handoff.md) | Full developer handoff: DPP Event Log Service (EPCIS → Turtle → IOTA), Combell, examples |
 
 ## Suggested layout (as the project grows)

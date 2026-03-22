@@ -25,7 +25,7 @@ Order of operations for **dpp-event** (write API at `events.tabulas.eu`).
 
 ## 2. Test before Combell
 
-- **CI:** Pushes to `main` / `master` run `.github/workflows/ci.yml` (`npm ci`, **`npm run build`**, **`npm test`**) on Node 22 — build must succeed (frontend + **`build:server`**) before tests run.
+- **CI:** Pushes to `main` / `master` run `.github/workflows/ci.yml` on Node 22: **`npm ci`**, **`npm run build`**, **`npm test`**, then **`docker build`** (validates the **`Dockerfile`**). See [`docker.md`](./docker.md).
 - **Local:** `npm install && npm run build && npm test` (or `npm test` alone if you only changed server code); optional `npm run dev` and `curl` against `POST /events` (see root `README.md`).
 
 **Vercel:** The **read** app (`tabulas.eu`, Next.js + Comunica) belongs on Vercel. **This** service is a long-running Express app with a persisted Turtle file (`data/products.ttl`), so production is **Node on Combell**, not a typical serverless Vercel deploy. Use GitHub Actions + staging on a Node host (or Combell staging) to validate before pointing DNS.

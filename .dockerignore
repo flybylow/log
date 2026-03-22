@@ -1,0 +1,15 @@
+# Build context: keep small and reproducible
+.git
+.github
+node_modules
+dist
+frontend/dist
+frontend/node_modules
+.env
+.env.*
+.env.local
+*.log
+data/*.ttl
+.cursor
+coverage
+.vscode
