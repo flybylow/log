@@ -50,10 +50,18 @@ test("GET /status returns service metadata", async () => {
   assert.equal(res.body.eventCount, 0);
 });
 
-test("GET / shows dashboard HTML", async () => {
-  const res = await request(app).get("/").expect(200);
-  assert.match(res.text, /dpp-event/);
+test("GET / serves SPA when frontend is built", async () => {
+  const res = await request(app).get("/");
+  if (res.status === 503) {
+    assert.match(res.text, /Frontend not built/);
+    return;
+  }
+  assert.equal(res.status, 200);
   assert.equal(res.headers["content-type"]?.includes("text/html"), true);
+  assert.match(
+    res.text,
+    /log\.tabulas\.eu|DPP Event Log|root|Send EPCIS|Event timeline/i
+  );
 });
 
 test("GET /api/timeline lists events after POST (oldest-first)", async () => {

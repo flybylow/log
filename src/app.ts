@@ -1,3 +1,5 @@
+import path from "path";
+import fs from "fs";
 import express from "express";
 import cors from "cors";
 import { resolveCorsOrigin } from "./corsConfig";
@@ -8,7 +10,6 @@ import { classify } from "./classify";
 import { notarize } from "./notarize";
 import { appendToGraph, getGraph } from "./graph";
 import { pushTimelineEntry, getTimeline, resetTimelineForTests } from "./recentTimeline";
-import { renderDashboard } from "./dashboardHtml";
 
 export const app = express();
 
@@ -88,14 +89,6 @@ app.get("/api/timeline", (_req, res) => {
   res.json({ events: getTimeline(), order: "oldest-first" });
 });
 
-app.get("/", (_req, res) => {
-  const frontends =
-    process.env.DASHBOARD_FRONTENDS ||
-    "https://aiactscan.eu (AI Act Scan) · tabulas.eu (read)";
-  res.setHeader("Content-Type", "text/html; charset=utf-8");
-  res.send(renderDashboard(getTimeline(), { eventCount, frontends }));
-});
-
 app.get("/graph", (_req, res) => {
   const turtle = getGraph();
   res.setHeader("Content-Type", "text/turtle; charset=utf-8");
@@ -115,5 +108,19 @@ app.get("/status", (_req, res) => {
     iotaNetwork: process.env.IOTA_NETWORK || "testnet",
   });
 });
+
+const frontendDist = path.join(__dirname, "..", "frontend", "dist");
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+} else {
+  app.get("/", (_req, res) => {
+    res
+      .status(503)
+      .type("text/plain")
+      .send(
+        "Frontend not built. From repo root: cd frontend && npm ci && npm run build && cd .. && npm run build"
+      );
+  });
+}
 
 export default app;
