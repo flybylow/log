@@ -11,7 +11,7 @@ npm run build   # frontend → frontend/dist; Express serves the SPA at GET /
 npm run dev
 ```
 
-**Open the app at the API root:** **`http://localhost:3001/`** (or whatever **`PORT`** is in `.env`). One process serves the **React dashboard at `/`** and the **API on the same origin** — same shape as production (Combell), no extra proxy, no CORS surprises. That is usually the smoothest way to use the project day to day.
+**Open the app at the API root:** **`http://localhost:3001/`** (or whatever **`PORT`** is in `.env`). One process serves the **React dashboard at `/`** and the **API on the same origin** — same shape as production (Combell), no extra proxy, no CORS surprises. That is usually the smoothest way to use the project day to day. Use the **Send** button in the header to show or hide the **Send EPCIS event** form (samples + JSON).
 
 **Optional — Vite on port 5173:** For **frontend-only** work with hot reload, run `cd frontend && npm install && npm run dev` and open **`http://localhost:5173/`**. Vite proxies `/graph`, `/status`, `/api`, and `/events` to the API using **`PORT` from the repo root `.env`** (default **3001**, so **Next.js** or anything else can use **3000**). Keep **`npm run dev`** running in the repo root so the API is up.
 
