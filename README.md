@@ -7,7 +7,7 @@
 ```bash
 npm install
 cp .env.example .env
-npm run build   # frontend → frontend/dist; Express serves the SPA at GET /
+npm run build   # npm ci at root, then frontend + server compile (use npm run build:quick if deps already installed)
 npm run dev
 ```
 
