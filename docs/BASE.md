@@ -22,8 +22,8 @@ Keep entries short and factual. Link to longer docs in `docs/` when needed.
 
 ## Language
 
-- **All project documentation** (this file, `docs/*`, root `README.md` pointers, comments meant for maintainers) is written in **English**.
-- **Commit messages** and **PR descriptions** use **English** for consistency and tooling.
+- **English only** for this repository’s **documentation**, **knowledge base** (`docs/BASE.md`, `docs/*`), **root `README.md`**, **inline comments** intended for maintainers, **commit messages**, and **PR descriptions**. Tools and collaborators should default to **English** when changing or explaining code here.
+- **EPCIS payloads and domain terms** (e.g. event field names, `bizStep` values) stay as defined by GS1 / project examples; surrounding prose stays in **English**.
 
 ## Deploy discipline
 
@@ -36,7 +36,9 @@ Keep entries short and factual. Link to longer docs in `docs/` when needed.
 - **Production write API:** `events.tabulas.eu` — Express on Combell, Node.js 22
 - **Read layer:** `tabulas.eu` on Vercel (Next.js, Comunica/SPARQL)
 - **Pipeline:** EPCIS JSON-LD → validate → Turtle → SHA-256 → classify → IOTA notarization (stub) → append graph + persist Turtle (default `data/products.ttl`, override with `DPP_GRAPH_PATH`)
-- **Tests:** `npm test` runs `tsx --test` on `src/*.test.ts` (incl. `supertest` against `app.ts`); `npm run smoke` is a manual printout only
+- **Construction EPCIS examples:** The JSON files under **`examples/`** (e.g. commissioning, mixer shipped, installer installed) are the **canonical** sample events for the **construction** vertical. Use them for **`curl`**, tests, demos, and the in-app “send event” flow. The **API surface** is unchanged: **`POST /events`** with the same JSON-LD shape; only the payload content reflects construction scenarios.
+- **Frontend:** `frontend/` is a Vite + React + Tailwind SPA (`@xyflow/react` graph). **`npm run build`** runs `build:frontend` (`cd frontend && npm ci && npm run build`) then **`tsc`**. Express serves **`GET /`** from `frontend/dist` when present; otherwise **`503`** with a build hint.
+- **Tests:** `npm test` runs `tsx --test` on `src/*.test.ts` (incl. `supertest` against `app.ts`); run **`npm run build` first** so `GET /` tests see the built SPA. `npm run smoke` is a manual printout only
 - **Combell Node.js:** Control panel expects `package.json` scripts **`build`** and **`serve`**; pipeline runs build then starts `serve` ([deployment-setup.md](./deployment-setup.md)).
 - **CORS:** Set `CORS_ORIGINS` on the write API (e.g. `https://aiactscan.eu,https://tabulas.eu`) so the Vercel frontend and Tabulas can call `log.tabulas.eu` / `events.tabulas.eu`; browser `Origin` has no path (so `https://aiactscan.eu` covers `/log`).
 - **Secrets:** `IOTA_PRIVATE_KEY` and Combell env vars live in hosting only; never commit `.env`
@@ -53,4 +55,4 @@ Full handoff (architecture, file layout, source snapshots, examples, deployment)
 
 ---
 
-*Last updated: 2026-03-22 (language + deploy discipline)*
+*Last updated: 2026-03-22 (English-only emphasis; construction EPCIS examples)*
