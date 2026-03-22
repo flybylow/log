@@ -83,6 +83,7 @@ Set these in the Combell panel for the Node.js instance (exact screen name varie
 | `TABULAS_ORIGIN` | Legacy single origin if `CORS_ORIGINS` is unset. |
 | `DPP_GRAPH_PATH` | Optional absolute path to the Turtle file if `process.cwd()` on the host is not stable between deploys (defaults to `./data/products.ttl`). |
 | `DPP_GRAPH_RESET_SECRET` | Optional. Enables **`DELETE /graph`** and the dashboard **Clear graph…** button (see root `README.md`). |
+| `CANONICAL_HOST` | Optional. Apex hostname only (e.g. `log.tabulas.eu`). When both **`www`** and apex DNS point at this app, set this so **`Host: www.…`** gets **301** to **`https://<CANONICAL_HOST>`** with the same path and query (no separate nginx rule required). |
 
 Redeploy or restart the Node process after changing env vars if the panel does not do it automatically.
 

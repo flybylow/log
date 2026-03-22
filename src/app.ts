@@ -10,8 +10,14 @@ import { classify } from "./classify";
 import { notarize } from "./notarize";
 import { appendToGraph, clearPersistedGraph, getGraph } from "./graph";
 import { pushTimelineEntry, getTimeline, resetTimelineForTests } from "./recentTimeline";
+import { wwwRedirectMiddleware } from "./wwwRedirect";
 
 export const app = express();
+
+const canonicalHost = process.env.CANONICAL_HOST?.trim();
+if (canonicalHost) {
+  app.use(wwwRedirectMiddleware(canonicalHost));
+}
 
 app.use(cors({ origin: resolveCorsOrigin(process.env) }));
 app.use(express.json({ limit: "1mb" }));
