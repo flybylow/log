@@ -1,0 +1,20 @@
+{
+  "@context": ["https://ref.gs1.org/standards/epcis/2.0.0/epcis-context.jsonld"],
+  "type": "ObjectEvent",
+  "eventTime": "2026-03-22T14:30:00Z",
+  "action": "OBSERVE",
+  "bizStep": "shipping",
+  "epcList": ["https://id.gs1.org/01/05413456000029/21/GROHE-EH-042"],
+  "readPoint": {
+    "id": "https://id.gs1.org/414/0541345600003"
+  },
+  "bizLocation": {
+    "id": "https://id.gs1.org/414/0541345600004"
+  },
+  "disposition": "in_transit",
+  "actor": "Van Marcke Logistics",
+  "dpp:etimClass": "EC011431",
+  "dpp:brand": "Grohe",
+  "dpp:model": "Eurosmart",
+  "dpp:destination": "Installateur Janssens BVBA"
+}

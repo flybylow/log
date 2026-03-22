@@ -1,0 +1,20 @@
+{
+  "@context": ["https://ref.gs1.org/standards/epcis/2.0.0/epcis-context.jsonld"],
+  "type": "ObjectEvent",
+  "eventTime": "2026-03-22T09:00:00Z",
+  "action": "ADD",
+  "bizStep": "commissioning",
+  "epcList": ["https://id.gs1.org/01/05413456000012/21/ARBLU-IDS-001"],
+  "readPoint": {
+    "id": "https://id.gs1.org/414/0541345600001"
+  },
+  "bizLocation": {
+    "id": "https://id.gs1.org/414/0541345600002"
+  },
+  "actor": "Van Marcke Group NV",
+  "certification": "ETIM EC011431",
+  "dpp:etimClass": "EC011431",
+  "dpp:etimClassDescription": "Inloopdouche",
+  "dpp:brand": "Arblu",
+  "dpp:model": "Ideo Screen"
+}

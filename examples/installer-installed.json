@@ -1,0 +1,18 @@
+{
+  "@context": ["https://ref.gs1.org/standards/epcis/2.0.0/epcis-context.jsonld"],
+  "type": "ObjectEvent",
+  "eventTime": "2026-03-25T11:00:00Z",
+  "action": "OBSERVE",
+  "bizStep": "installing",
+  "epcList": ["https://id.gs1.org/01/05413456000029/21/GROHE-EH-042"],
+  "readPoint": {
+    "id": "https://id.gs1.org/414/0541345600005"
+  },
+  "bizLocation": {
+    "id": "https://id.gs1.org/414/0541345600006"
+  },
+  "actor": "Installateur Janssens BVBA",
+  "dpp:project": "Nieuwbouw Residentie Groen",
+  "dpp:location": "Unit 3B, Badkamer",
+  "dpp:installerCertification": "Cerga G1"
+}
