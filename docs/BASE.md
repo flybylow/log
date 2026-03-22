@@ -20,6 +20,15 @@ Update `BASE.md` when you establish or change:
 
 Keep entries short and factual. Link to longer docs in `docs/` when needed.
 
+## Language
+
+- **All project documentation** (this file, `docs/*`, root `README.md` pointers, comments meant for maintainers) is written in **English**.
+- **Commit messages** and **PR descriptions** use **English** for consistency and tooling.
+
+## Deploy discipline
+
+- **Test first, then deploy (“play”).** Before triggering a hosting pipeline (e.g. Combell) or treating a release as done, run **`npm test`** and **`npm run build`** locally or rely on **CI** on `main`. Do not skip green tests for production deploys.
+
 ## dpp-event (project facts)
 
 - **Runnable service code** lives at this repository root (`package.json`, `src/`, `examples/`). The handoff document is the detailed archive and may lag the repo; prefer the source tree for behavior.
@@ -44,4 +53,4 @@ Full handoff (architecture, file layout, source snapshots, examples, deployment)
 
 ---
 
-*Last updated: 2026-03-22*
+*Last updated: 2026-03-22 (language + deploy discipline)*

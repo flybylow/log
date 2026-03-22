@@ -2,6 +2,8 @@
 
 Order of operations for **dpp-event** (write API at `events.tabulas.eu`).
 
+**Rule:** Test and build are green **before** you run the Combell pipeline (“play”). See [BASE.md](./BASE.md) (*Deploy discipline*, *Language* — documentation and commits stay in **English**).
+
 ## 1. GitHub
 
 1. **Create an empty repository** on GitHub (no README if you already have one locally), under your org or user.
