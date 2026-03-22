@@ -85,8 +85,12 @@ function DashboardInner() {
           log.tabulas.eu
         </h1>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-          Horizontal timeline (older left → newer right); details stack vertically per step.{" "}
-          <span className="text-slate-500">Click a timeline row or “Event details” for a single-event view.</span>
+          Two steps:{" "}
+          <span className="font-medium text-slate-800 dark:text-slate-200">1. Sync</span> — post EPCIS
+          events ·{" "}
+          <span className="font-medium text-slate-800 dark:text-slate-200">2. Check</span> — graph &
+          timeline (older left → newer right; details stack per step). Click a timeline row or “Event
+          details” for a single-event view.
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-700 dark:text-slate-300">
           {loading && <span className="text-slate-500">Loading…</span>}
@@ -109,7 +113,7 @@ function DashboardInner() {
               type="button"
               onClick={() => setSendFormOpen((o) => !o)}
               aria-expanded={sendFormOpen}
-              aria-controls="send-epcis-panel"
+              aria-controls="sync-section"
               className="rounded-lg border border-emerald-600 bg-emerald-600 px-3 py-1 text-xs font-medium text-white shadow-sm hover:bg-emerald-700 dark:border-emerald-500 dark:bg-emerald-600 dark:hover:bg-emerald-500"
             >
               {sendFormOpen ? "Hide send form" : "Send"}
@@ -134,18 +138,60 @@ function DashboardInner() {
         )}
       </header>
 
-      <div
-        className={sendFormOpen ? "block" : "hidden"}
-        aria-hidden={!sendFormOpen}
+      <section
+        id="sync-section"
+        aria-labelledby="sync-heading"
+        className="shrink-0 border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
       >
-        <SendEventPanel
-          onSent={() => {
-            void reload();
-          }}
-        />
-      </div>
+        <div className="px-4 py-3">
+          <h2
+            id="sync-heading"
+            className="text-base font-semibold tracking-tight text-slate-900 dark:text-slate-50"
+          >
+            1. Sync
+          </h2>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            Post EPCIS JSON-LD lifecycle events to the log. After a successful send, the graph and
+            timeline refresh automatically.
+          </p>
+        </div>
+        {!sendFormOpen && (
+          <p className="border-t border-slate-100 px-4 py-2.5 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
+            Click <strong className="text-slate-700 dark:text-slate-300">Send</strong> in the header
+            to open the form (construction samples + JSON editor).
+          </p>
+        )}
+        <div
+          className={sendFormOpen ? "block" : "hidden"}
+          aria-hidden={!sendFormOpen}
+        >
+          <SendEventPanel
+            embedded
+            onSent={() => {
+              void reload();
+            }}
+          />
+        </div>
+      </section>
 
-      <div className="flex min-h-[420px] flex-1 flex-col lg:min-h-[480px] lg:flex-row">
+      <section
+        id="check-section"
+        aria-labelledby="check-heading"
+        className="flex min-h-0 flex-1 flex-col bg-slate-50/30 dark:bg-slate-950/30"
+      >
+        <div className="shrink-0 border-b border-slate-200 bg-white px-4 py-2.5 dark:border-slate-800 dark:bg-slate-900">
+          <h2
+            id="check-heading"
+            className="text-base font-semibold tracking-tight text-slate-900 dark:text-slate-50"
+          >
+            2. Check
+          </h2>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+            Inspect the RDF graph and event timeline. Use the graph for structure and the list for
+            newest-first history.
+          </p>
+        </div>
+        <div className="flex min-h-[420px] flex-1 flex-col lg:min-h-[480px] lg:flex-row">
         <div className="relative min-h-[360px] w-full flex-1 lg:min-h-0">
           <ReactFlow
             nodes={nodes}
@@ -171,7 +217,7 @@ function DashboardInner() {
           </ReactFlow>
         </div>
         <TimelineWidget events={timelineEvents} loading={loading} />
-      </div>
+        </div>
 
       {selected && (
         <aside className="border-t border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950">
@@ -193,6 +239,7 @@ function DashboardInner() {
           </dl>
         </aside>
       )}
+      </section>
 
       <footer className="border-t border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
         <p className="text-xs text-slate-500 dark:text-slate-400">

@@ -16,6 +16,8 @@ const LABELS: Record<SampleKey, string> = {
 
 type Props = {
   onSent: () => void | Promise<void>;
+  /** When true, styled as a subsection under **1. Sync** (h3 title, top border only). */
+  embedded?: boolean;
 };
 
 function normalizeJson(s: string): string {
@@ -33,7 +35,7 @@ type SuccessState = {
   ec: string;
 };
 
-export function SendEventPanel({ onSent }: Props) {
+export function SendEventPanel({ onSent, embedded = false }: Props) {
   const [sampleKey, setSampleKey] = useState<SampleKey>(SAMPLE_ORDER[0]);
   const [body, setBody] = useState(SAMPLE_PAYLOADS[SAMPLE_ORDER[0]]);
   const [busy, setBusy] = useState(false);
@@ -118,14 +120,20 @@ export function SendEventPanel({ onSent }: Props) {
     }
   };
 
+  const TitleTag = embedded ? "h3" : "h2";
+
   return (
     <section
       id="send-epcis-panel"
-      className="border-b border-slate-200 bg-slate-50/80 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/50"
+      className={
+        embedded
+          ? "border-t border-slate-200 bg-slate-50/80 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/50"
+          : "border-b border-slate-200 bg-slate-50/80 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/50"
+      }
     >
-      <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+      <TitleTag className="text-sm font-semibold text-slate-800 dark:text-slate-100">
         Send EPCIS event
-      </h2>
+      </TitleTag>
       <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
         Choose a construction-lifecycle sample or edit the JSON. After send, the graph and timeline
         refresh.
