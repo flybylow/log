@@ -1,10 +1,12 @@
 # Local / staging: build image and run with a named volume for data/products.ttl
+# Default host port is 3002 so it does not clash with `npm run dev` (usually 3001).
+# Override: DPP_COMPOSE_PORT=3001 docker compose up --build
 # Add `env_file: .env` under `dpp-event` if you use a root `.env` for secrets.
 services:
   dpp-event:
     build: .
     ports:
-      - "3001:3000"
+      - "${DPP_COMPOSE_PORT:-3002}:3000"
     environment:
       PORT: "3000"
     volumes:

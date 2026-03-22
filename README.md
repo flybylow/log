@@ -37,7 +37,7 @@ curl -X POST http://localhost:3001/events \
 
 Production-style run: `npm run build` then `npm run serve` (same as Combell’s `serve` script).
 
-**Docker:** `docker build -t dpp-event:local .` then run the image, or `docker compose up --build` — see [`docs/docker.md`](docs/docker.md).
+**Docker:** `docker build -t dpp-event:local .` then run the image, or `docker compose up --build` (Compose maps **3002→3000** by default so **3001** stays free for **`npm run dev`**). See [`docs/docker.md`](docs/docker.md).
 
 After deploy, **`GET /`** serves the **React graph UI** (built from `frontend/` into `frontend/dist`). If you see **`Cannot GET /`** or **`Frontend not built`**, run **`npm run build`** from the repo root (it builds the frontend and compiles the server). The API **`GET /api/timeline`** still returns the JSON event timeline.
 

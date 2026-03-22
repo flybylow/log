@@ -19,7 +19,11 @@ Or use Compose (optional **`.env`**; creates a volume for **`data/`**):
 docker compose up --build
 ```
 
-Default mapping: host **3001** → container **3000**.
+Default mapping: host **3002** → container **3000** (avoids **`address already in use`** on **3001** while **`npm run dev`** is running). Override the host port:
+
+```bash
+DPP_COMPOSE_PORT=3001 docker compose up --build
+```
 
 ## Production env
 
