@@ -27,6 +27,7 @@ Keep entries short and factual. Link to longer docs in `docs/` when needed.
 - **Production write API:** `events.tabulas.eu` — Express on Combell, Node.js 22
 - **Read layer:** `tabulas.eu` on Vercel (Next.js, Comunica/SPARQL)
 - **Pipeline:** EPCIS JSON-LD → validate → Turtle → SHA-256 → classify → IOTA notarization (stub/SDK) → append graph + persist `data/products.ttl`
+- **Combell Node.js:** Control panel expects `package.json` scripts **`build`** and **`serve`**; pipeline runs build then starts `serve` ([deployment-setup.md](./deployment-setup.md)).
 - **Secrets:** `IOTA_PRIVATE_KEY` and Combell env vars live in hosting only; never commit `.env`
 
 Full handoff (architecture, file layout, source snapshots, examples, deployment): [dpp-event-developer-handoff.md](./dpp-event-developer-handoff.md).
