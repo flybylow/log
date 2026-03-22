@@ -32,6 +32,8 @@ curl -X POST http://localhost:3000/events \
 
 Production-style run: `npm run build` then `npm run serve` (same as Combell’s `serve` script).
 
+After deploy, **`GET /`** should return a small HTML dashboard (timeline of accepted events). If you see **`Cannot GET /`**, the host is still running an **older build** — run the Combell **deploy pipeline** again from the current `main` on GitHub (`npm run build` must produce `dist/` including the `/` handler).
+
 ## Documentation
 
 - **Full developer handoff** (architecture, trust layers, deployment, source reference): [`docs/dpp-event-developer-handoff.md`](docs/dpp-event-developer-handoff.md)
