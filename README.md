@@ -10,10 +10,16 @@ cp .env.example .env
 npm run dev
 ```
 
-Smoke test (no server):
+Automated tests:
 
 ```bash
 npm test
+```
+
+Optional manual pipeline printout (no HTTP server):
+
+```bash
+npm run smoke
 ```
 
 Try the HTTP API (with `npm run dev` running):
@@ -24,7 +30,7 @@ curl -X POST http://localhost:3000/events \
   -d @examples/vanmarcke-inloopdouche.json
 ```
 
-Production-style run: `npm run build` then `npm start`.
+Production-style run: `npm run build` then `npm run serve` (same as Combell’s `serve` script).
 
 ## Documentation
 

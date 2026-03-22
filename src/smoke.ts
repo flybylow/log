@@ -1,4 +1,4 @@
-// Smoke test: validate, transform, hash, classify an example event
+// Manual smoke: validate → transform → hash → classify (prints to stdout)
 import { validate } from "./validate";
 import { transform } from "./transform";
 import { hashEvent } from "./hash";

@@ -28,6 +28,13 @@ const PRIVATE_STEPS = [
 export function classify(event: any): Classification {
   const step = event.bizStep || "";
 
+  if (event["dpp:graphOnly"] === true) {
+    return {
+      target: "graph-only",
+      reason: "dpp:graphOnly: store triples only, no IOTA notarization",
+    };
+  }
+
   if (event["dpp:private"] === true) {
     return { target: "pod", reason: "Explicitly marked private" };
   }

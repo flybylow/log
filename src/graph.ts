@@ -1,12 +1,10 @@
 // Step 6: GRAPH
 // In-memory Turtle store. Appends triples from each event.
 // Serves the full graph at GET /graph for Comunica/SPARQL.
-// Persists to data/products.ttl on disk.
+// Persists to data/products.ttl on disk (override with DPP_GRAPH_PATH).
 
 import fs from "fs";
 import path from "path";
-
-const GRAPH_FILE = path.join(process.cwd(), "data", "products.ttl");
 
 const HEADER = `@prefix schema: <https://schema.org/> .
 @prefix epcis: <https://ref.gs1.org/cbv/> .
@@ -17,17 +15,51 @@ const HEADER = `@prefix schema: <https://schema.org/> .
 `;
 
 let graphBody = "";
+let diskLoaded = false;
 
-// Load existing graph from disk on startup
-try {
-  if (fs.existsSync(GRAPH_FILE)) {
-    const existing = fs.readFileSync(GRAPH_FILE, "utf-8");
-    graphBody = existing.replace(/@prefix[^.]+\.\n/g, "").trim();
-    if (graphBody) graphBody += "\n\n";
-    console.log(`[graph] Loaded existing graph from ${GRAPH_FILE}`);
+/** Remove @prefix lines so appended blocks do not duplicate vocab headers. */
+function stripPrefixes(ttl: string): string {
+  return ttl
+    .split("\n")
+    .filter((line) => !/^\s*@prefix\s/i.test(line.trim()))
+    .join("\n")
+    .trim();
+}
+
+export function graphFilePath(): string {
+  return process.env.DPP_GRAPH_PATH
+    ? path.resolve(process.env.DPP_GRAPH_PATH)
+    : path.join(process.cwd(), "data", "products.ttl");
+}
+
+function loadFromDiskIfNeeded(): void {
+  if (diskLoaded) return;
+  diskLoaded = true;
+  const GRAPH_FILE = graphFilePath();
+  try {
+    if (fs.existsSync(GRAPH_FILE)) {
+      const existing = fs.readFileSync(GRAPH_FILE, "utf-8");
+      graphBody = stripPrefixes(existing).trim();
+      if (graphBody) graphBody += "\n\n";
+      console.log(`[graph] Loaded existing graph from ${GRAPH_FILE}`);
+    }
+  } catch {
+    // Start fresh
   }
-} catch {
-  // Start fresh
+}
+
+/** Test helper: clear memory + reset load flag (optional unlink). */
+export function resetGraphForTests(unlinkFile = false): void {
+  const p = graphFilePath();
+  graphBody = "";
+  diskLoaded = false;
+  if (unlinkFile) {
+    try {
+      if (fs.existsSync(p)) fs.unlinkSync(p);
+    } catch {
+      /* ignore */
+    }
+  }
 }
 
 export function appendToGraph(
@@ -35,9 +67,10 @@ export function appendToGraph(
   hash: string,
   iotaDigest: string | null
 ): { triplesAdded: number } {
-  const body = turtle.replace(/@prefix[^.]+\.\n/g, "").trim();
+  loadFromDiskIfNeeded();
 
-  // Add IOTA link triple if notarized
+  const body = stripPrefixes(turtle);
+
   let iotaTriple = "";
   if (iotaDigest) {
     const uriMatch = body.match(/^<([^>]+)>/);
@@ -46,7 +79,6 @@ export function appendToGraph(
     }
   }
 
-  // Hash triple
   const uriMatch = body.match(/^<([^>]+)>/);
   const hashTriple = uriMatch
     ? `\n<${uriMatch[1]}> dpp:sha256 "${hash}" .`
@@ -54,8 +86,8 @@ export function appendToGraph(
 
   graphBody += body + hashTriple + iotaTriple + "\n\n";
 
-  // Persist to disk
   try {
+    const GRAPH_FILE = graphFilePath();
     const dir = path.dirname(GRAPH_FILE);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(GRAPH_FILE, HEADER + graphBody, "utf-8");
@@ -68,5 +100,6 @@ export function appendToGraph(
 }
 
 export function getGraph(): string {
+  loadFromDiskIfNeeded();
   return HEADER + graphBody;
 }

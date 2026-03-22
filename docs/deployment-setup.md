@@ -36,7 +36,7 @@ Official reference: [Getting started with Node.js (Combell)](https://www.combell
 
 1. **Web hosting + Node.js option** — Combell deploys from Git; you need a hosting package where the **Node.js** add-on is enabled (buy/activate it in the shop or control panel if you have not yet).
 2. **Code on GitHub** — The app must already be in a repo (section 1). You will paste the clone URL (HTTPS or SSH) into Combell.
-3. **This repo’s `package.json`** — Combell requires **`build`** and **`serve`** scripts. Here, `build` runs `tsc` and `serve` runs `node dist/server.js` (same as `start`).
+3. **This repo’s `package.json`** — Combell requires **`build`** and **`serve`** scripts. Here, `build` runs `npm ci && tsc` and `serve` runs `node dist/server.js`.
 
 ### Step A — Add a Node.js instance
 

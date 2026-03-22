@@ -44,14 +44,16 @@ Manufacturer / ERP / Scanner
 ```
 dpp-event/
   src/
-    server.ts      Express: POST /events, GET /graph, GET /status
+    server.ts      Entry: dotenv + listen (production / Combell)
+    app.ts         Express: POST /events, GET /graph, GET /status (testable)
     validate.ts    Step 1: EPCIS structure check
     transform.ts   Step 2: JSON-LD to Turtle
     hash.ts        Step 3: SHA-256 canonical hash
-    classify.ts    Step 4: public (IOTA) vs private (Solid Pod)
+    classify.ts    Step 4: public (IOTA) vs private (Solid Pod); `dpp:graphOnly`
     notarize.ts    Step 5: IOTA Dynamic Notarization (stub)
-    graph.ts       Step 6: in-memory Turtle store + disk persist
-    test.ts        Smoke test
+    graph.ts       Step 6: in-memory Turtle store + disk persist (`DPP_GRAPH_PATH`)
+    smoke.ts       Manual printout of steps 1–4 (no HTTP)
+    *.test.ts      `node:test` + supertest (`npm test`)
   data/
     .gitkeep       Graph file (products.ttl) written here at runtime
   examples/
@@ -98,10 +100,11 @@ curl -X POST http://localhost:3000/events \
   "description": "DPP Event Log Service: EPCIS to IOTA notarization pipeline",
   "main": "dist/server.js",
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/server.js",
+    "build": "npm ci && tsc",
+    "serve": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
-    "test": "tsx src/test.ts"
+    "test": "tsx --test src/validate.test.ts src/hash.test.ts src/classify.test.ts src/transform.test.ts src/app.test.ts",
+    "smoke": "tsx src/smoke.ts"
   },
   "dependencies": {
     "express": "^4.21.0",
@@ -114,6 +117,8 @@ curl -X POST http://localhost:3000/events \
     "@types/express": "^4.17.21",
     "@types/cors": "^2.8.17",
     "@types/jsonld": "^1.5.15",
+    "@types/supertest": "^7.2.0",
+    "supertest": "^7.2.2",
     "typescript": "^5.5.0",
     "tsx": "^4.19.0"
   },
@@ -621,113 +626,12 @@ export async function notarize(
 
 ### src/graph.ts
 
-```typescript
-// Step 6: GRAPH
-// In-memory Turtle store. Appends triples from each event.
-// Serves the full graph at GET /graph for Comunica/SPARQL.
-// Persists to data/products.ttl on disk.
+In-memory Turtle plus disk persistence. Path: `DPP_GRAPH_PATH` or `data/products.ttl`. `@prefix` lines from `transform()` output are removed with a **line filter** (`stripPrefixes`) so URLs with dots in `https://` are handled correctly. Lazy-load from disk on first read/write. Full source: `src/graph.ts` in the repo.
 
-import fs from "fs";
-import path from "path";
+### Tests and smoke
 
-const GRAPH_FILE = path.join(process.cwd(), "data", "products.ttl");
-
-const HEADER = `@prefix schema: <https://schema.org/> .
-@prefix epcis: <https://ref.gs1.org/cbv/> .
-@prefix dpp: <https://tabulas.eu/ontology/dpp/> .
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-@prefix gs1: <https://id.gs1.org/> .
-
-`;
-
-let graphBody = "";
-
-// Load existing graph from disk on startup
-try {
-  if (fs.existsSync(GRAPH_FILE)) {
-    const existing = fs.readFileSync(GRAPH_FILE, "utf-8");
-    graphBody = existing.replace(/@prefix[^.]+\.\n/g, "").trim();
-    if (graphBody) graphBody += "\n\n";
-    console.log(`[graph] Loaded existing graph from ${GRAPH_FILE}`);
-  }
-} catch {
-  // Start fresh
-}
-
-export function appendToGraph(
-  turtle: string,
-  hash: string,
-  iotaDigest: string | null
-): { triplesAdded: number } {
-  const body = turtle.replace(/@prefix[^.]+\.\n/g, "").trim();
-
-  // Add IOTA link triple if notarized
-  let iotaTriple = "";
-  if (iotaDigest) {
-    const uriMatch = body.match(/^<([^>]+)>/);
-    if (uriMatch) {
-      iotaTriple = `\n<${uriMatch[1]}> dpp:iotaDigest "${iotaDigest}" .`;
-    }
-  }
-
-  // Hash triple
-  const uriMatch = body.match(/^<([^>]+)>/);
-  const hashTriple = uriMatch
-    ? `\n<${uriMatch[1]}> dpp:sha256 "${hash}" .`
-    : "";
-
-  graphBody += body + hashTriple + iotaTriple + "\n\n";
-
-  // Persist to disk
-  try {
-    const dir = path.dirname(GRAPH_FILE);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(GRAPH_FILE, HEADER + graphBody, "utf-8");
-  } catch (err) {
-    console.error("[graph] Failed to persist:", err);
-  }
-
-  const triplesAdded = body.split("\n").filter((l) => l.trim().length > 0).length;
-  return { triplesAdded };
-}
-
-export function getGraph(): string {
-  return HEADER + graphBody;
-}
-```
-
-### src/test.ts
-
-```typescript
-// Smoke test: validate, transform, hash, classify an example event
-import { validate } from "./validate";
-import { transform } from "./transform";
-import { hashEvent } from "./hash";
-import { classify } from "./classify";
-import fs from "fs";
-import path from "path";
-
-const exampleFile = path.join(__dirname, "../examples/vanmarcke-inloopdouche.json");
-const event = JSON.parse(fs.readFileSync(exampleFile, "utf-8"));
-
-console.log("=== STEP 1: VALIDATE ===");
-const v = validate(event);
-console.log(v.valid ? "PASS" : "FAIL", v.errors);
-
-console.log("\n=== STEP 2: TRANSFORM ===");
-const turtle = transform(event);
-console.log(turtle);
-
-console.log("\n=== STEP 3: HASH ===");
-const hash = hashEvent(event);
-console.log("SHA-256:", hash);
-
-console.log("\n=== STEP 4: CLASSIFY ===");
-const c = classify(event);
-console.log(`Target: ${c.target} (${c.reason})`);
-
-console.log("\n=== DONE ===");
-```
+- **`npm test`** — Node’s test runner via `tsx` (`src/*.test.ts`): unit tests for validate/hash/classify/transform, and HTTP integration tests (`supertest`) against `app.ts`.
+- **`npm run smoke`** — `src/smoke.ts` prints the pipeline for `examples/vanmarcke-inloopdouche.json` (steps 1–4 only, no server).
 
 ---
 
