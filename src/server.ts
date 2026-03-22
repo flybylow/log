@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { app } from "./app";
+import app, { getResolvedFrontendDist } from "./app";
 
 dotenv.config();
 
@@ -7,8 +7,12 @@ dotenv.config();
 const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
+  const fd = getResolvedFrontendDist();
   console.log(`dpp-event running on :${PORT}`);
-  console.log(`  GET  /          - React graph UI (static from frontend/dist)`);
+  console.log(
+    `  frontend/dist: ${fd ?? "(not found — run npm run build from repo root; GET / returns 503)"}`
+  );
+  console.log(`  GET  /          - React graph UI (when frontend/dist exists)`);
   console.log(`  GET  /api/timeline - JSON timeline`);
   console.log(`  POST /events  - submit EPCIS event`);
   console.log(`  GET  /graph   - Turtle knowledge graph`);

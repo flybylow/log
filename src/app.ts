@@ -157,39 +157,68 @@ app.get("/status", (_req, res) => {
   });
 });
 
-const frontendDist = path.join(__dirname, "..", "frontend", "dist");
-const indexHtmlPath = path.join(frontendDist, "index.html");
-
 const frontendMissingMessage =
   "Frontend not built. From repo root: cd frontend && npm ci && npm run build && cd .. && npm run build";
 
-if (fs.existsSync(frontendDist)) {
-  // Register GET / before express.static: otherwise missing index.html yields Express default "Cannot GET /".
-  app.get("/", (_req, res) => {
-    if (fs.existsSync(indexHtmlPath)) {
-      res.sendFile(path.resolve(indexHtmlPath));
-    } else {
-      res.status(503).type("text/plain").send(
-        `${frontendMissingMessage} (expected ${path.join("frontend", "dist", "index.html")} on the server)`
-      );
+/**
+ * Combell and other hosts may run `node dist/server.js` with cwd != repo root, or only copy part of the tree.
+ * Try paths relative to the compiled bundle and to process.cwd().
+ */
+function resolveFrontendDist(): string | null {
+  const candidates = [
+    path.join(__dirname, "..", "frontend", "dist"),
+    path.join(process.cwd(), "frontend", "dist"),
+  ];
+  for (const p of candidates) {
+    try {
+      if (fs.existsSync(p) && fs.statSync(p).isDirectory()) {
+        return p;
+      }
+    } catch {
+      /* ignore */
     }
-  });
+  }
+  return null;
+}
+
+const frontendDist = resolveFrontendDist();
+const indexHtmlPath = frontendDist ? path.join(frontendDist, "index.html") : null;
+
+function sendDashboardIndex(res: express.Response) {
+  if (indexHtmlPath && fs.existsSync(indexHtmlPath)) {
+    res.sendFile(path.resolve(indexHtmlPath));
+    return;
+  }
+  const hint = frontendDist
+    ? `(directory exists but index.html missing at ${indexHtmlPath})`
+    : `(no frontend/dist next to dist/ or under cwd: ${process.cwd()})`;
+  res.status(503).type("text/plain").send(`${frontendMissingMessage}\n${hint}`);
+}
+
+/** Always register GET / so production never falls through to Express default "Cannot GET /". */
+app.get("/", (_req, res) => {
+  sendDashboardIndex(res);
+});
+
+if (frontendDist) {
   app.use(express.static(frontendDist, { index: false }));
-  /** SPA: client-side routes (e.g. /event/:hash) — API routes above are matched first. */
-  app.get("*", (req, res, next) => {
-    if (req.method !== "GET") return next();
-    if (req.path.startsWith("/api")) return next();
-    if (req.path === "/graph" || req.path === "/status") return next();
-    if (fs.existsSync(indexHtmlPath)) {
-      res.sendFile(path.resolve(indexHtmlPath));
-    } else {
-      next();
-    }
-  });
-} else {
-  app.get("/", (_req, res) => {
-    res.status(503).type("text/plain").send(frontendMissingMessage);
-  });
+}
+
+/** SPA: client-side routes (e.g. /event/:hash) — API routes above are matched first. */
+app.get("*", (req, res, next) => {
+  if (req.method !== "GET") return next();
+  if (req.path.startsWith("/api")) return next();
+  if (req.path === "/graph" || req.path === "/status") return next();
+  if (indexHtmlPath && fs.existsSync(indexHtmlPath)) {
+    res.sendFile(path.resolve(indexHtmlPath));
+  } else {
+    next();
+  }
+});
+
+/** For startup logs (Combell debugging). */
+export function getResolvedFrontendDist(): string | null {
+  return frontendDist;
 }
 
 export default app;
