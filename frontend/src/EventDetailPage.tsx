@@ -1,47 +1,27 @@
-import {
-  Background,
-  Controls,
-  MiniMap,
-  ReactFlow,
-  ReactFlowProvider,
-  useReactFlow,
-} from "@xyflow/react";
-import { useCallback, useEffect, useMemo, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { buildFlowElements } from "./graphLayout";
-import { GraphNode } from "./GraphNodes";
-import { parseTurtleToGraph } from "./parseTurtle";
-import { renderTextWithLinks } from "./linkify";
+import { buildForceGraphDataForEvent } from "./forceGraphData";
+import type { KnowledgeGraphNode } from "./forceGraphData";
 import { findEventUriBySha256 } from "./eventLookup";
-import type { Edge, Node } from "@xyflow/react";
-import type { FlowNodeData } from "./graphLayout";
+import { KnowledgeForceGraph } from "./KnowledgeForceGraph";
+import { parseTurtleToGraph } from "./parseTurtle";
+import { NodeDetailsDl } from "./NodeDetailsDl";
 import type { TimelineEntry } from "./types/timeline";
-
-const nodeTypes = { graph: GraphNode };
 
 const HASH_RE = /^[a-f0-9]{64}$/i;
 
-function AutoFitView({ nodeCount }: { nodeCount: number }) {
-  const { fitView } = useReactFlow();
-  useEffect(() => {
-    const id = window.setTimeout(() => {
-      void fitView({ padding: 0.2, duration: 280 });
-    }, 80);
-    return () => window.clearTimeout(id);
-  }, [nodeCount, fitView]);
-  return null;
-}
-
-function EventDetailInner() {
+export function EventDetailPage() {
   const { hash } = useParams<{ hash: string }>();
-  const [nodes, setNodes] = useState<Node<FlowNodeData>[]>([]);
-  const [edges, setEdges] = useState<Edge[]>([]);
+  const [graphData, setGraphData] = useState<{
+    nodes: KnowledgeGraphNode[];
+    links: Array<{ source: string; target: string; name?: string }>;
+  }>({ nodes: [], links: [] });
   const [entry, setEntry] = useState<TimelineEntry | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [resolvedEventUri, setResolvedEventUri] = useState<string | null>(null);
-  const [selected, setSelected] = useState<Node<FlowNodeData> | null>(null);
+  const [selected, setSelected] = useState<KnowledgeGraphNode | null>(null);
 
   const validHash = hash && HASH_RE.test(hash);
   const hashLower = hash?.toLowerCase() ?? "";
@@ -84,12 +64,8 @@ function EventDetailInner() {
           return;
         }
 
-        const { nodes: n, edges: e } = buildFlowElements(entities, ge, [eventUri]);
-        const flowNodes = n.map((node) => ({ ...node, type: "graph" as const }));
-        if (!cancelled) {
-          setNodes(flowNodes);
-          setEdges(e);
-        }
+        const gd = buildForceGraphDataForEvent(entities, ge, eventUri);
+        if (!cancelled) setGraphData(gd);
       } catch (err: unknown) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : String(err));
@@ -102,24 +78,11 @@ function EventDetailInner() {
     return () => {
       cancelled = true;
     };
-  }, [hash, validHash]);
+  }, [hash, validHash, hashLower]);
 
-  const onNodeClick = useCallback(
-    (_: MouseEvent, node: Node<FlowNodeData>) => {
-      setSelected(node);
-    },
-    []
-  );
-
-  const defaultEdgeOptions = useMemo(
-    () => ({
-      style: { stroke: "#94a3b8", strokeWidth: 1.5 },
-      labelStyle: { fill: "#64748b", fontSize: 11, fontWeight: 500 },
-      labelBgStyle: { fill: "#f8fafc", fillOpacity: 0.95 },
-      labelBgPadding: [4, 4] as [number, number],
-    }),
-    []
-  );
+  const onNodeClick = useCallback((node: KnowledgeGraphNode) => {
+    setSelected(node);
+  }, []);
 
   if (!validHash) {
     return (
@@ -133,7 +96,7 @@ function EventDetailInner() {
   }
 
   return (
-    <div className="flex min-h-full flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <header className="border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
         <div className="flex flex-wrap items-center gap-3">
           <Link
@@ -180,59 +143,26 @@ function EventDetailInner() {
         )}
       </header>
 
-      {!notFound && nodes.length > 0 && (
-        <div className="relative min-h-[420px] w-full flex-1">
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            nodeTypes={nodeTypes}
+      {!notFound && graphData.nodes.length > 0 && (
+        <div className="flex min-h-[min(55vh,880px)] min-w-0 flex-1 flex-col lg:min-h-0">
+          <KnowledgeForceGraph
+            className="flex min-h-0 flex-1 flex-col"
+            graphData={graphData}
             onNodeClick={onNodeClick}
-            fitView
-            fitViewOptions={{ padding: 0.2 }}
-            minZoom={0.2}
-            maxZoom={1.5}
-            defaultEdgeOptions={defaultEdgeOptions}
-            proOptions={{ hideAttribution: true }}
-          >
-            <AutoFitView nodeCount={nodes.length} />
-            <Background gap={20} size={1} color="#e2e8f0" />
-            <Controls showInteractive={false} />
-            <MiniMap
-              nodeStrokeWidth={3}
-              zoomable
-              pannable
-              className="!bg-slate-100/90 dark:!bg-slate-900/90"
-            />
-          </ReactFlow>
+          />
         </div>
       )}
 
       {selected && (
         <aside className="border-t border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950">
           <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">Node details</h2>
-          <dl className="mt-2 grid max-h-40 grid-cols-[auto_1fr] gap-x-3 gap-y-1 overflow-auto text-xs text-slate-700 dark:text-slate-300">
-            <dt className="font-medium text-slate-500">Label</dt>
-            <dd>{renderTextWithLinks(selected.data.label)}</dd>
-            <dt className="font-medium text-slate-500">Kind</dt>
-            <dd>{selected.data.kind}</dd>
-            {selected.data.literals &&
-              Object.entries(selected.data.literals).map(([k, v]) => (
-                <div key={k} className="contents">
-                  <dt className="font-medium text-slate-500">{k}</dt>
-                  <dd className="break-all">{renderTextWithLinks(v)}</dd>
-                </div>
-              ))}
-          </dl>
+          <NodeDetailsDl
+            node={selected}
+            graphData={graphData}
+            className="mt-2 grid max-h-40 grid-cols-[auto_1fr] gap-x-3 gap-y-1 overflow-auto text-xs text-slate-700 dark:text-slate-300"
+          />
         </aside>
       )}
     </div>
-  );
-}
-
-export function EventDetailPage() {
-  return (
-    <ReactFlowProvider>
-      <EventDetailInner />
-    </ReactFlowProvider>
   );
 }

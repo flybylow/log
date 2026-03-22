@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import type { Edge, Node } from "@xyflow/react";
-import { buildFlowElements, type FlowNodeData } from "./graphLayout";
+import { buildForceGraphData } from "./forceGraphData";
+import type { KnowledgeGraphNode } from "./forceGraphData";
 import { parseTurtleToGraph } from "./parseTurtle";
 import type { TimelineEntry } from "./types/timeline";
 
@@ -14,13 +14,19 @@ type StatusPayload = {
   graphResetEnabled?: boolean;
 };
 
+export type GraphPayload = {
+  nodes: KnowledgeGraphNode[];
+  links: Array<{ source: string; target: string; name?: string }>;
+};
+
 export function useGraphData() {
-  const [nodes, setNodes] = useState<Node<FlowNodeData>[]>([]);
-  const [edges, setEdges] = useState<Edge[]>([]);
+  const [graphData, setGraphData] = useState<GraphPayload>({ nodes: [], links: [] });
   const [status, setStatus] = useState<StatusPayload | null>(null);
   const [timelineEvents, setTimelineEvents] = useState<TimelineEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  /** False until the first `load()` finishes (success or error). Avoids “No graph data yet” before GET /graph returns. */
+  const [graphReady, setGraphReady] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -42,17 +48,12 @@ export function useGraphData() {
       setTimelineEvents(tl.events ?? []);
 
       const { entities, edges: ge, eventSubjects } = parseTurtleToGraph(ttl);
-      const { nodes: n, edges: e } = buildFlowElements(entities, ge, eventSubjects);
-      const flowNodes = n.map((node) => ({
-        ...node,
-        type: "graph",
-      }));
-      setNodes(flowNodes);
-      setEdges(e);
+      setGraphData(buildForceGraphData(entities, ge, eventSubjects));
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
+      setGraphReady(true);
     }
   }, []);
 
@@ -63,12 +64,12 @@ export function useGraphData() {
   }, [load]);
 
   return {
-    nodes,
-    edges,
+    graphData,
     status,
     timelineEvents,
     error,
     loading,
+    graphReady,
     reload: load,
   };
 }

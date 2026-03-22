@@ -1,4 +1,3 @@
-import type { Edge, Node } from "@xyflow/react";
 import type { ParsedGraphEdge, ParsedGraphEntity } from "./parseTurtle";
 
 /** Horizontal spacing between event columns (left = older, right = newer). */
@@ -23,8 +22,28 @@ export type FlowNodeData = {
   literals?: Record<string, string>;
   /** HTTP(S) URL for product / location / readPoint when present on the entity */
   resourceUrl?: string;
+  /** Dashboard timeline: primary product GS1 URI for this step (links + identifiers). */
+  primaryProductUri?: string;
   /** For event nodes: SHA-256 hex for `/event/:hash` detail route. */
   eventHashHex?: string;
+};
+
+/** Legacy fixed layout (tests); dashboard uses `KnowledgeForceGraph` + `buildForceGraphData`. */
+export type LayoutNode = {
+  id: string;
+  position: { x: number; y: number };
+  data: FlowNodeData;
+  style?: { width?: number; height?: number };
+};
+
+export type LayoutEdge = {
+  id: string;
+  source: string;
+  target: string;
+  label?: string;
+  type?: string;
+  animated?: boolean;
+  style?: { stroke?: string; strokeWidth?: number; strokeDasharray?: string };
 };
 
 function sha256HexForEvent(
@@ -50,9 +69,9 @@ export function buildFlowElements(
   entities: Map<string, ParsedGraphEntity>,
   graphEdges: ParsedGraphEdge[],
   eventSubjects: string[]
-): { nodes: Node<FlowNodeData>[]; edges: Edge[] } {
-  const nodes: Node<FlowNodeData>[] = [];
-  const edges: Edge[] = [];
+): { nodes: LayoutNode[]; edges: LayoutEdge[] } {
+  const nodes: LayoutNode[] = [];
+  const edges: LayoutEdge[] = [];
   const placed = new Set<string>();
 
   function place(id: string, x: number, y: number, width: number, height: number): void {

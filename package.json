@@ -9,6 +9,7 @@
     "build:server": "node node_modules/typescript/bin/tsc",
     "serve": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
+    "dev:clean": "npm run clear:graph && npm run dev",
     "test": "tsx --test src/validate.test.ts src/hash.test.ts src/classify.test.ts src/transform.test.ts src/corsConfig.test.ts src/wwwRedirect.test.ts src/app.test.ts",
     "test:frontend": "cd frontend && npx vitest run",
     "smoke": "tsx src/smoke.ts",

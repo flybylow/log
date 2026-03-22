@@ -7,7 +7,7 @@ const URL_IN_TEXT =
 const linkClass =
   "break-all font-medium text-emerald-700 underline decoration-emerald-600/50 underline-offset-2 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300";
 
-/** Turn http(s) and www. segments into external links. Use `anchorClass` e.g. `nodrag` inside React Flow nodes. */
+/** Turn http(s) and www. segments into external links. Optional `anchorClass` for graph hit-testing / layout wrappers. */
 export function renderTextWithLinks(text: string, anchorClass = ""): ReactNode {
   if (!text) return null;
   const parts: ReactNode[] = [];

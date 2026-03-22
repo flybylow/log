@@ -22,6 +22,18 @@ if (canonicalHost) {
 app.use(cors({ origin: resolveCorsOrigin(process.env) }));
 app.use(express.json({ limit: "1mb" }));
 
+/** Dashboard and SPARQL clients must not cache graph/timeline/status — stale responses look like “browser memory.” */
+app.use((req, res, next) => {
+  if (
+    req.method === "GET" &&
+    (req.path === "/graph" || req.path === "/api/timeline" || req.path === "/status")
+  ) {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+    res.setHeader("Pragma", "no-cache");
+  }
+  next();
+});
+
 // Stats (module state for /status)
 let eventCount = 0;
 let lastNotarization: string | null = null;
@@ -152,8 +164,7 @@ const frontendMissingMessage =
   "Frontend not built. From repo root: cd frontend && npm ci && npm run build && cd .. && npm run build";
 
 if (fs.existsSync(frontendDist)) {
-  app.use(express.static(frontendDist));
-  // If dist/ exists but index.html was not deployed, static falls through → generic "Cannot GET /".
+  // Register GET / before express.static: otherwise missing index.html yields Express default "Cannot GET /".
   app.get("/", (_req, res) => {
     if (fs.existsSync(indexHtmlPath)) {
       res.sendFile(path.resolve(indexHtmlPath));
@@ -163,6 +174,7 @@ if (fs.existsSync(frontendDist)) {
       );
     }
   });
+  app.use(express.static(frontendDist, { index: false }));
   /** SPA: client-side routes (e.g. /event/:hash) — API routes above are matched first. */
   app.get("*", (req, res, next) => {
     if (req.method !== "GET") return next();

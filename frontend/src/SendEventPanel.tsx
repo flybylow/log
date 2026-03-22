@@ -135,8 +135,7 @@ export function SendEventPanel({ onSent, embedded = false }: Props) {
         Send EPCIS event
       </TitleTag>
       <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
-        Choose a construction-lifecycle sample or edit the JSON. After send, the graph and timeline
-        refresh.
+        Choose a construction-lifecycle sample or edit the JSON.
       </p>
       <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-500">
         Full EPCIS 2.0 field sets and CBV vocabulary are defined by GS1 — use the textarea to align

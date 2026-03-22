@@ -5,24 +5,40 @@ import { CopyableHash, renderTextWithLinks } from "./linkify";
 type Props = {
   events: TimelineEntry[];
   loading?: boolean;
+  /** When true, omit outer sidebar border (parent provides chrome). */
+  embedded?: boolean;
 };
 
 function shortHash(h: string): string {
   return h.length > 14 ? `${h.slice(0, 10)}…` : h;
 }
 
-export function TimelineWidget({ events, loading }: Props) {
+export function TimelineWidget({ events, loading, embedded }: Props) {
   const reversed = [...events].reverse();
 
   return (
-    <aside className="flex h-full min-h-0 w-full shrink-0 flex-col border-l border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 lg:w-80">
+    <aside
+      className={
+        embedded
+          ? "flex h-full min-h-0 w-full min-w-0 shrink-0 flex-col bg-white dark:bg-slate-900"
+          : "flex h-full min-h-0 w-full shrink-0 flex-col border-l border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 lg:w-80"
+      }
+    >
       <div className="border-b border-slate-200 px-3 py-2 dark:border-slate-800">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-          Event timeline
-        </h2>
-        <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-500">
-          Accepted events (newest first). In-memory since last server restart.
-        </p>
+        {embedded ? (
+          <p className="text-[11px] text-slate-500 dark:text-slate-500">
+            Newest first. In-memory since last server restart.
+          </p>
+        ) : (
+          <>
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              Event timeline
+            </h2>
+            <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-500">
+              Accepted events (newest first). In-memory since last server restart.
+            </p>
+          </>
+        )}
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto p-2">
         {loading && (
@@ -30,7 +46,7 @@ export function TimelineWidget({ events, loading }: Props) {
         )}
         {!loading && reversed.length === 0 && (
           <p className="px-1 text-xs text-slate-500">
-            No events yet. Send one above.
+            No events yet.
           </p>
         )}
         <ul className="space-y-2">

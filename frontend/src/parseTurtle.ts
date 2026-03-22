@@ -49,20 +49,67 @@ function stripPrefixes(ttl: string): string {
     .join("\n");
 }
 
-/** Collect statement strings (content without trailing dot). */
+/**
+ * Collect statement strings (content without trailing dot).
+ * Line-based `endsWith('.')` breaks when `."` or `.` appears inside a string (e.g. `"v1.0"`).
+ * Scan for `.` only outside `"..."` and outside `<...>`.
+ */
 function collectStatements(ttl: string): string[] {
-  const lines = stripPrefixes(ttl).split(/\r?\n/);
+  const s = stripPrefixes(ttl).replace(/\r\n/g, "\n");
   const out: string[] = [];
   let buf = "";
-  for (const line of lines) {
-    const t = line.trim();
-    if (!t) continue;
-    buf += (buf ? " " : "") + t;
-    if (t.endsWith(".")) {
-      out.push(buf.slice(0, -1).trim());
-      buf = "";
+  let i = 0;
+  let inString = false;
+  let angleDepth = 0;
+
+  while (i < s.length) {
+    const c = s[i];
+    if (inString) {
+      if (c === "\\" && i + 1 < s.length) {
+        buf += c + s[i + 1];
+        i += 2;
+        continue;
+      }
+      if (c === '"') inString = false;
+      buf += c;
+      i++;
+      continue;
     }
+    if (c === '"') {
+      inString = true;
+      buf += c;
+      i++;
+      continue;
+    }
+    if (c === "#") {
+      while (i < s.length && s[i] !== "\n") i++;
+      continue;
+    }
+    if (c === "<") {
+      angleDepth++;
+      buf += c;
+      i++;
+      continue;
+    }
+    if (c === ">" && angleDepth > 0) {
+      angleDepth--;
+      buf += c;
+      i++;
+      continue;
+    }
+    if (c === "." && angleDepth === 0 && !inString) {
+      const t = buf.trim();
+      if (t) out.push(t);
+      buf = "";
+      i++;
+      while (i < s.length && /\s/.test(s[i])) i++;
+      continue;
+    }
+    buf += c;
+    i++;
   }
+  const last = buf.trim();
+  if (last) out.push(last);
   return out;
 }
 
@@ -92,6 +139,9 @@ function parseObjectValue(objStr: string): { raw: string; kind: "uri" | "literal
   const t = objStr.trim();
   if (t.startsWith("<")) {
     const end = t.indexOf(">");
+    if (end <= 0) {
+      throw new Error(`cannot parse IRI (missing >): ${t.slice(0, 80)}`);
+    }
     return { raw: t.slice(1, end), kind: "uri" };
   }
   if (t.startsWith('"')) {
@@ -115,23 +165,84 @@ function parseObjectValue(objStr: string): { raw: string; kind: "uri" | "literal
   throw new Error(`cannot parse object: ${t.slice(0, 60)}`);
 }
 
-function splitTopLevelCommas(s: string): string[] {
+/**
+ * Split on `,` or `;` only outside `"..."`, outside `(...)`, and outside `<...>` IRIs.
+ * Commas inside GS1 / http IRIs (e.g. rare `?a,b`) must not split object lists.
+ */
+function splitAtTopLevelDelimiter(s: string, delimiter: "," | ";"): string[] {
   const parts: string[] = [];
-  let depth = 0;
   let buf = "";
-  for (let i = 0; i < s.length; i++) {
+  let i = 0;
+  let inString = false;
+  let parenDepth = 0;
+  let angleDepth = 0;
+
+  while (i < s.length) {
     const c = s[i];
-    if (c === "(") depth++;
-    if (c === ")" && depth > 0) depth--;
-    if (c === "," && depth === 0) {
-      parts.push(buf.trim());
-      buf = "";
-    } else {
+    if (inString) {
+      if (c === "\\" && i + 1 < s.length) {
+        buf += c + s[i + 1];
+        i += 2;
+        continue;
+      }
+      if (c === '"') inString = false;
       buf += c;
+      i++;
+      continue;
     }
+    if (c === '"') {
+      inString = true;
+      buf += c;
+      i++;
+      continue;
+    }
+    if (c === "(") parenDepth++;
+    if (c === ")" && parenDepth > 0) parenDepth--;
+    if (c === "<") {
+      angleDepth++;
+      buf += c;
+      i++;
+      continue;
+    }
+    if (c === ">" && angleDepth > 0) {
+      angleDepth--;
+      buf += c;
+      i++;
+      continue;
+    }
+    if (
+      c === delimiter &&
+      parenDepth === 0 &&
+      angleDepth === 0 &&
+      !inString
+    ) {
+      const t = buf.trim();
+      if (t) parts.push(t);
+      buf = "";
+      i++;
+      if (delimiter === ";") {
+        while (i < s.length && /\s/.test(s[i])) i++;
+      }
+      continue;
+    }
+    buf += c;
+    i++;
   }
-  if (buf.trim()) parts.push(buf.trim());
+  const last = buf.trim();
+  if (last) parts.push(last);
   return parts;
+}
+
+function splitTopLevelCommas(s: string): string[] {
+  return splitAtTopLevelDelimiter(s, ",");
+}
+
+/**
+ * Split predicate-object list on `;` only **outside** double-quoted strings and IRIs.
+ * Naive `.split(/;/)` breaks literals like `dpp:actor "Acme; NV"` and causes "unterminated string".
+ */
+function splitPredicateObjectListOnSemicolon(rest: string): string[] {
+  return splitAtTopLevelDelimiter(rest, ";");
 }
 
 function parseStatement(statement: string): Triple[] {
@@ -145,7 +256,7 @@ function parseStatement(statement: string): Triple[] {
   const pos = subjMatch[0].length;
 
   const rest = s.slice(pos).trim();
-  const parts = rest.split(/\s*;\s*/).map((p) => p.trim());
+  const parts = splitPredicateObjectListOnSemicolon(rest);
 
   for (const part of parts) {
     if (!part) continue;
