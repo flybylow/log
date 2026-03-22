@@ -12,7 +12,7 @@ const PREFIXES = `@prefix schema: <https://schema.org/> .
 
 `;
 
-export function transform(event: any): string {
+export function transform(event: any): { turtle: string; eventUri: string } {
   const lines: string[] = [];
   const eventUri = eventToUri(event);
 
@@ -77,7 +77,8 @@ export function transform(event: any): string {
   const lastLine = lines[lines.length - 1];
   lines[lines.length - 1] = lastLine.replace(/ ;$/, " .");
 
-  return PREFIXES + lines.join("\n") + "\n";
+  const turtle = PREFIXES + lines.join("\n") + "\n";
+  return { turtle, eventUri };
 }
 
 function eventToUri(event: any): string {

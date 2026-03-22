@@ -14,7 +14,7 @@ const v = validate(event);
 console.log(v.valid ? "PASS" : "FAIL", v.errors);
 
 console.log("\n=== STEP 2: TRANSFORM ===");
-const turtle = transform(event);
+const { turtle } = transform(event);
 console.log(turtle);
 
 console.log("\n=== STEP 3: HASH ===");

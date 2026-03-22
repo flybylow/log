@@ -23,7 +23,19 @@ export type FlowNodeData = {
   literals?: Record<string, string>;
   /** HTTP(S) URL for product / location / readPoint when present on the entity */
   resourceUrl?: string;
+  /** For event nodes: SHA-256 hex for `/event/:hash` detail route. */
+  eventHashHex?: string;
 };
+
+function sha256HexForEvent(
+  eventUri: string,
+  graphEdges: ParsedGraphEdge[],
+  entities: Map<string, ParsedGraphEntity>
+): string | undefined {
+  const edge = graphEdges.find((g) => g.source === eventUri && g.label === "sha256");
+  if (!edge) return undefined;
+  return entities.get(edge.target)?.literals?.sha256;
+}
 
 function sortByLabel(a: string, b: string) {
   return a.localeCompare(b);
@@ -55,6 +67,8 @@ export function buildFlowElements(
       e.uri && (e.uri.startsWith("http://") || e.uri.startsWith("https://"))
         ? e.uri
         : undefined;
+    const eventHashHex =
+      kind === "event" ? sha256HexForEvent(id, graphEdges, entities) : undefined;
     nodes.push({
       id,
       position: { x, y },
@@ -64,6 +78,7 @@ export function buildFlowElements(
         subtitle,
         literals: e.literals,
         resourceUrl,
+        ...(eventHashHex ? { eventHashHex } : {}),
       },
       style: { width, height },
     });

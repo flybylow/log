@@ -66,6 +66,16 @@ test("GET / serves SPA when frontend is built", async () => {
   );
 });
 
+test("GET /event/:hash serves SPA shell for client-side detail route", async () => {
+  const res = await request(app).get(`/event/${"a".repeat(64)}`);
+  if (res.status === 503) {
+    assert.match(res.text, /Frontend not built/);
+    return;
+  }
+  assert.equal(res.status, 200);
+  assert.equal(res.headers["content-type"]?.includes("text/html"), true);
+});
+
 test("GET /api/timeline lists events after POST (oldest-first)", async () => {
   await request(app).post("/events").send(validEvent).expect(201);
   const res = await request(app).get("/api/timeline").expect(200);
@@ -73,6 +83,10 @@ test("GET /api/timeline lists events after POST (oldest-first)", async () => {
   assert.equal(res.body.events.length, 1);
   assert.equal(res.body.events[0].hash.length, 64);
   assert.equal(res.body.events[0].classification, "iota");
+  assert.match(
+    String(res.body.events[0].eventUri),
+    /^https:\/\/events\.tabulas\.eu\/event\//
+  );
 });
 
 test("POST /events rejects invalid payload", async () => {

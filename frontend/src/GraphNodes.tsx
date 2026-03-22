@@ -1,5 +1,6 @@
 import { Handle, Position } from "@xyflow/react";
 import type { Node, NodeProps } from "@xyflow/react";
+import { Link } from "react-router-dom";
 import type { FlowNodeData } from "./graphLayout";
 import { CopyableHash, renderTextWithLinks } from "./linkify";
 import { getGraphResourceLinks } from "./identifierLinks";
@@ -76,6 +77,14 @@ export function GraphNode({ id, data }: NodeProps<GraphFlowNode>) {
         <div className="mt-1 truncate text-xs opacity-80">
           {renderTextWithLinks(data.subtitle, "nodrag")}
         </div>
+      )}
+      {data.kind === "event" && data.eventHashHex && (
+        <Link
+          to={`/event/${data.eventHashHex}`}
+          className="nodrag mt-1 inline-block text-[10px] font-semibold text-violet-800 underline decoration-violet-500/50 underline-offset-2 hover:text-violet-950 dark:text-violet-300 dark:hover:text-violet-100"
+        >
+          Event details →
+        </Link>
       )}
       {!isHash && resourceLinks && (
         <div className="nodrag mt-1 flex max-w-full flex-col gap-0.5 text-[10px] font-medium">

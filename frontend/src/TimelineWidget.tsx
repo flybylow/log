@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import type { TimelineEntry } from "./types/timeline";
 import { CopyableHash, renderTextWithLinks } from "./linkify";
 
@@ -36,31 +37,39 @@ export function TimelineWidget({ events, loading }: Props) {
           {reversed.map((ev) => (
             <li
               key={`${ev.hash}-${ev.receivedAt}`}
-              className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-xs dark:border-slate-700 dark:bg-slate-800/80"
+              className="rounded-lg border border-slate-200 bg-slate-50 text-xs dark:border-slate-700 dark:bg-slate-800/80"
             >
-              <div className="text-[10px] text-slate-600 dark:text-slate-300">
-                <span className="text-slate-500 dark:text-slate-400">SHA-256: </span>
-                <CopyableHash
-                  full={ev.hash}
-                  short={shortHash(ev.hash)}
-                  className="text-slate-700 dark:text-slate-200"
-                />
-              </div>
-              <div className="mt-1 text-slate-800 dark:text-slate-100">
-                <span className="font-medium">{ev.bizStep ?? "—"}</span>
-                <span className="text-slate-400"> · </span>
-                <span className="text-emerald-700 dark:text-emerald-400">
-                  {ev.classification}
-                </span>
-              </div>
-              <div
-                className="mt-0.5 max-w-full text-[11px] text-slate-600 dark:text-slate-400"
-                title={ev.epcFirst ?? ""}
-              >
-                {ev.epcFirst ? renderTextWithLinks(ev.epcFirst) : "—"}
-              </div>
-              <div className="mt-1 text-[10px] text-slate-400">
-                {ev.eventTime}
+              <div className="flex items-start gap-2 p-2">
+                <Link
+                  to={`/event/${ev.hash}`}
+                  className="min-w-0 flex-1 rounded-md transition-colors hover:bg-emerald-50/90 dark:hover:bg-slate-700/80"
+                >
+                  <div className="mt-1 text-slate-800 dark:text-slate-100">
+                    <span className="font-medium">{ev.bizStep ?? "—"}</span>
+                    <span className="text-slate-400"> · </span>
+                    <span className="text-emerald-700 dark:text-emerald-400">
+                      {ev.classification}
+                    </span>
+                  </div>
+                  <div
+                    className="mt-0.5 max-w-full text-[11px] text-slate-600 dark:text-slate-400"
+                    title={ev.epcFirst ?? ""}
+                  >
+                    {ev.epcFirst ? renderTextWithLinks(ev.epcFirst) : "—"}
+                  </div>
+                  <div className="mt-1 text-[10px] text-slate-400">{ev.eventTime}</div>
+                  <div className="mt-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
+                    Open details →
+                  </div>
+                </Link>
+                <div className="shrink-0 text-right text-[10px] text-slate-600 dark:text-slate-300">
+                  <span className="block text-slate-500 dark:text-slate-400">SHA-256</span>
+                  <CopyableHash
+                    full={ev.hash}
+                    short={shortHash(ev.hash)}
+                    className="text-slate-700 dark:text-slate-200"
+                  />
+                </div>
               </div>
             </li>
           ))}

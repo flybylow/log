@@ -39,6 +39,8 @@ Production-style run: `npm run build` then `npm run serve` (same as Combell’s 
 
 **Docker:** `docker build -t dpp-event:local .` then run the image, or `docker compose up --build` (Compose maps **3002→3000** by default so **3001** stays free for **`npm run dev`**). See [`docs/docker.md`](docs/docker.md).
 
+**Event detail page:** open **`/event/<64-hex-SHA-256>`** (from the timeline or “Event details →” on an event node). The server exposes **`eventUri`** on **`GET /api/timeline`** so each row links to the RDF event subject for that submission.
+
 After deploy, **`GET /`** serves the **React graph UI** (built from `frontend/` into `frontend/dist`). If you see **`Cannot GET /`** or **`Frontend not built`**, run **`npm run build`** from the repo root (it builds the frontend and compiles the server). The API **`GET /api/timeline`** still returns the JSON event timeline.
 
 **Timeline layout:** Each accepted `POST /events` is stored as its **own RDF event resource** (a unique subject URI per submission). In the graph, steps are laid out **left → right** by `eventTime` (older on the left, newer on the right): **each new event is a new point on the horizontal timeline**. Detail nodes for that step (actors, products, locations, hash, etc.) stack **vertically** within that column. Sending the same sample JSON twice still creates **two** horizontal steps because each request gets a distinct event URI.

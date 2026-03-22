@@ -48,7 +48,7 @@ app.post("/events", async (req, res) => {
       return;
     }
 
-    const turtle = transform(event);
+    const { turtle, eventUri } = transform(event);
     const hash = hashEvent(event);
     const classification = classify(event);
 
@@ -72,6 +72,7 @@ app.post("/events", async (req, res) => {
       bizStep: typeof event.bizStep === "string" ? event.bizStep : null,
       type: String(event.type || "ObjectEvent"),
       hash,
+      eventUri,
       classification: classification.target,
       epcFirst: typeof epcFirst === "string" ? epcFirst : null,
       triplesAdded: stored.triplesAdded,
@@ -160,6 +161,17 @@ if (fs.existsSync(frontendDist)) {
       res.status(503).type("text/plain").send(
         `${frontendMissingMessage} (expected ${path.join("frontend", "dist", "index.html")} on the server)`
       );
+    }
+  });
+  /** SPA: client-side routes (e.g. /event/:hash) — API routes above are matched first. */
+  app.get("*", (req, res, next) => {
+    if (req.method !== "GET") return next();
+    if (req.path.startsWith("/api")) return next();
+    if (req.path === "/graph" || req.path === "/status") return next();
+    if (fs.existsSync(indexHtmlPath)) {
+      res.sendFile(path.resolve(indexHtmlPath));
+    } else {
+      next();
     }
   });
 } else {

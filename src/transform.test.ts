@@ -9,9 +9,10 @@ test("transform emits Turtle with event URI and prefixes", () => {
     bizStep: "commissioning",
     epcList: ["https://id.gs1.org/01/05412345000013"],
   };
-  const ttl = transform(event);
+  const { turtle: ttl, eventUri } = transform(event);
   assert.match(ttl, /@prefix dpp:/);
   assert.match(ttl, /dpp:LifecycleEvent/);
   assert.match(ttl, /dpp:eventTime/);
   assert.match(ttl, /epcis:commissioning/);
+  assert.match(eventUri, /^https:\/\/events\.tabulas\.eu\/event\//);
 });
