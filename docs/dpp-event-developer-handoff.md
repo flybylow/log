@@ -1,6 +1,6 @@
 # dpp-event: Developer Handoff
 
-**Repo:** https://github.com/flybylow/dpp-event  
+**Repo:** https://github.com/flybylow/log  
 **Domain:** events.tabulas.eu (Combell, Node.js 22)  
 **Purpose:** DPP Event Log Service. Receives EPCIS 2.0 lifecycle events, transforms to RDF/Turtle, notarizes hashes to IOTA Rebased.
 
@@ -72,7 +72,7 @@ dpp-event/
 ## Setup
 
 ```bash
-git clone https://github.com/flybylow/dpp-event.git
+git clone https://github.com/flybylow/log.git
 cd dpp-event
 npm install
 cp .env.example .env
@@ -715,7 +715,7 @@ In-memory Turtle plus disk persistence. Path: `DPP_GRAPH_PATH` or `data/products
 ## Deployment: Combell
 
 - Node.js 22, port 3000
-- Git push deploy (Combell pulls from flybylow/dpp-event)
+- Git push deploy (Combell pulls from flybylow/log)
 - DNS: events.tabulas.eu CNAME to Combell instance
 - Deploy key: read-only SSH key from Combell added to GitHub repo settings
 

@@ -16,7 +16,7 @@ Order of operations for **dpp-event** (write API at `events.tabulas.eu`).
    Or create and push in one step:
 
    ```bash
-   gh repo create OWNER/dpp-event --private --source=. --remote=origin --push
+   gh repo create OWNER/log --private --source=. --remote=origin --push
    ```
 
 3. **Combell deploy key (later):** In the repo → **Settings → Deploy keys**, add the read-only SSH public key Combell gives you so the host can `git pull`.

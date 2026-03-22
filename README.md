@@ -39,4 +39,4 @@ Production-style run: `npm run build` then `npm run serve` (same as Combell’s 
 - **Conventions & knowledge base:** [`docs/BASE.md`](docs/BASE.md)
 - **Docs index:** [`docs/README.md`](docs/README.md)
 
-Upstream reference repo: [github.com/flybylow/dpp-event](https://github.com/flybylow/dpp-event).
+Upstream reference repo: [github.com/flybylow/log](https://github.com/flybylow/log).

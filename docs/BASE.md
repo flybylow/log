@@ -23,7 +23,7 @@ Keep entries short and factual. Link to longer docs in `docs/` when needed.
 ## dpp-event (project facts)
 
 - **Runnable service code** lives at this repository root (`package.json`, `src/`, `examples/`). The handoff document is the detailed archive and may lag the repo; prefer the source tree for behavior.
-- **Upstream repo:** https://github.com/flybylow/dpp-event
+- **Upstream repo:** https://github.com/flybylow/log
 - **Production write API:** `events.tabulas.eu` — Express on Combell, Node.js 22
 - **Read layer:** `tabulas.eu` on Vercel (Next.js, Comunica/SPARQL)
 - **Pipeline:** EPCIS JSON-LD → validate → Turtle → SHA-256 → classify → IOTA notarization (stub) → append graph + persist Turtle (default `data/products.ttl`, override with `DPP_GRAPH_PATH`)
