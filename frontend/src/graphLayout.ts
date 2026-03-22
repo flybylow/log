@@ -1,14 +1,20 @@
 import type { Edge, Node } from "@xyflow/react";
 import type { ParsedGraphEdge, ParsedGraphEntity } from "./parseTurtle";
 
-const ROW = 280;
-const EVENT_X = 380;
-const EVENT_Y_OFF = 48;
-const SIDE_X = 72;
-const BELOW_Y = 120;
-const PRODUCT_X = 180;
-const LOC_MID_X = 400;
-const LOC_RIGHT_X = 620;
+/** Horizontal spacing between event columns (left = older, right = newer). */
+const COL_WIDTH = 280;
+const MARGIN_X = 28;
+const COL_TOP = 16;
+const GAP = 10;
+
+const EV_W = 220;
+const EV_H = 72;
+const CARD_W = 200;
+const ACTOR_H = 48;
+const PRODUCT_H = 52;
+const LOC_H = 48;
+const HASH_H = 30;
+const IOTA_H = 36;
 
 export type FlowNodeData = {
   label: string;
@@ -21,7 +27,11 @@ function sortByLabel(a: string, b: string) {
   return a.localeCompare(b);
 }
 
-/** Assign fixed positions for a timeline of events (newest at bottom optional — caller sorts). */
+/**
+ * Horizontal timeline: one column per lifecycle event, left → right by `eventTime`
+ * (oldest first). New events (later in time) appear on the **right**.
+ * Within each column, nodes stack **vertically** (event → actors → product → locations → hash → IOTA).
+ */
 export function buildFlowElements(
   entities: Map<string, ParsedGraphEntity>,
   graphEdges: ParsedGraphEdge[],
@@ -38,9 +48,7 @@ export function buildFlowElements(
     placed.add(id);
     const kind = e.kind;
     const subtitle =
-      kind === "event" && e.literals.eventTime
-        ? e.literals.eventTime
-        : undefined;
+      kind === "event" && e.literals.eventTime ? e.literals.eventTime : undefined;
     nodes.push({
       id,
       position: { x, y },
@@ -54,17 +62,21 @@ export function buildFlowElements(
     });
   }
 
+  let maxBottom = COL_TOP;
+
   eventSubjects.forEach((eventUri, index) => {
-    const rowY = index * ROW + 24;
+    const colX = MARGIN_X + index * COL_WIDTH;
+    let y = COL_TOP;
+
     const ev = entities.get(eventUri);
     if (!ev) return;
 
-    const evW = 220;
-    const evH = 64;
-    place(eventUri, EVENT_X, rowY + EVENT_Y_OFF, evW, evH);
+    place(eventUri, colX, y, EV_W, EV_H);
+    y += EV_H + GAP;
 
     const outgoing = graphEdges.filter((e) => e.source === eventUri);
     const incoming = graphEdges.filter((e) => e.target === eventUri);
+
     const actors = incoming
       .filter((e) => e.label === "actor")
       .map((e) => e.source)
@@ -75,36 +87,43 @@ export function buildFlowElements(
     const readPoints = outgoing.filter((e) => e.label === "readPoint").map((e) => e.target);
     const bizLocs = outgoing.filter((e) => e.label === "bizLocation").map((e) => e.target);
     const hashes = outgoing.filter((e) => e.label === "sha256").map((e) => e.target);
+    const iotas = outgoing.filter((e) => e.label === "iotaDigest").map((e) => e.target);
 
     actors.sort(sortByLabel);
     products.sort(sortByLabel);
     readPoints.sort(sortByLabel);
     bizLocs.sort(sortByLabel);
 
-    actors.forEach((aid, i) => {
-      place(aid, SIDE_X + i * 8, rowY + EVENT_Y_OFF + i * 6, 200, 52);
+    actors.forEach((aid) => {
+      place(aid, colX, y, CARD_W, ACTOR_H);
+      y += ACTOR_H + GAP;
+    });
+    products.forEach((pid) => {
+      place(pid, colX, y, CARD_W, PRODUCT_H);
+      y += PRODUCT_H + GAP;
+    });
+    readPoints.forEach((lid) => {
+      place(lid, colX, y, CARD_W, LOC_H);
+      y += LOC_H + GAP;
+    });
+    bizLocs.forEach((lid) => {
+      place(lid, colX, y, CARD_W, LOC_H);
+      y += LOC_H + GAP;
+    });
+    hashes.forEach((hid) => {
+      place(hid, colX, y, 120, HASH_H);
+      y += HASH_H + GAP;
+    });
+    iotas.forEach((iid) => {
+      place(iid, colX, y, CARD_W, IOTA_H);
+      y += IOTA_H + GAP;
     });
 
-    products.forEach((pid, i) => {
-      place(pid, PRODUCT_X, rowY + BELOW_Y + i * 72, 200, 52);
-    });
-
-    readPoints.forEach((lid, i) => {
-      place(lid, LOC_MID_X - 40, rowY + BELOW_Y + i * 72, 180, 48);
-    });
-
-    bizLocs.forEach((lid, i) => {
-      place(lid, LOC_RIGHT_X, rowY + BELOW_Y + i * 72, 180, 48);
-    });
-
-    hashes.forEach((hid, i) => {
-      place(hid, EVENT_X + 70, rowY + EVENT_Y_OFF + evH + 12 + i * 30, 100, 28);
-    });
+    maxBottom = Math.max(maxBottom, y);
   });
 
-  // Orphan entities (not in any event row): place in a grid below
-  let orphanX = 40;
-  let orphanY = eventSubjects.length * ROW + 40;
+  let orphanX = MARGIN_X;
+  let orphanY = maxBottom + 48;
   for (const [id, ent] of entities) {
     if (placed.has(id)) continue;
     if (ent.kind === "other" || ent.kind === "hash") {
@@ -118,8 +137,8 @@ export function buildFlowElements(
       });
       placed.add(id);
       orphanX += w + 24;
-      if (orphanX > 900) {
-        orphanX = 40;
+      if (orphanX > MARGIN_X + eventSubjects.length * COL_WIDTH + 200) {
+        orphanX = MARGIN_X;
         orphanY += 80;
       }
     }

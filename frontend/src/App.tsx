@@ -128,7 +128,7 @@ function AppInner() {
           log.tabulas.eu
         </h1>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-          DPP Event Log — Turtle knowledge graph (React Flow) + event timeline
+          Horizontal timeline (older left → newer right); details stack vertically per step.
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-700 dark:text-slate-300">
           {loading && <span className="text-slate-500">Loading…</span>}
