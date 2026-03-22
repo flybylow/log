@@ -77,7 +77,8 @@ Set these in the Combell panel for the Node.js instance (exact screen name varie
 | `IOTA_RPC_URL` | e.g. `https://api.testnet.iota.cafe` |
 | `IOTA_PRIVATE_KEY` | Your key — **never** commit to git. |
 | `IOTA_NETWORK` | e.g. `testnet` |
-| `TABULAS_ORIGIN` | e.g. `https://tabulas.eu` |
+| `CORS_ORIGINS` | Comma-separated browser origins allowed to call the API (e.g. `https://aiactscan.eu,https://tabulas.eu`). Paths like `/log` are not part of the origin. |
+| `TABULAS_ORIGIN` | Legacy single origin if `CORS_ORIGINS` is unset. |
 
 Redeploy or restart the Node process after changing env vars if the panel does not do it automatically.
 

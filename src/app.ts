@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import { resolveCorsOrigin } from "./corsConfig";
 import { validate } from "./validate";
 import { transform } from "./transform";
 import { hashEvent } from "./hash";
@@ -9,7 +10,7 @@ import { appendToGraph, getGraph } from "./graph";
 
 export const app = express();
 
-app.use(cors({ origin: process.env.TABULAS_ORIGIN || "*" }));
+app.use(cors({ origin: resolveCorsOrigin(process.env) }));
 app.use(express.json({ limit: "1mb" }));
 
 // Stats (module state for /status)
