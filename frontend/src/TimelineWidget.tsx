@@ -1,4 +1,5 @@
 import type { TimelineEntry } from "./types/timeline";
+import { CopyableHash, renderTextWithLinks } from "./linkify";
 
 type Props = {
   events: TimelineEntry[];
@@ -37,8 +38,13 @@ export function TimelineWidget({ events, loading }: Props) {
               key={`${ev.hash}-${ev.receivedAt}`}
               className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-xs dark:border-slate-700 dark:bg-slate-800/80"
             >
-              <div className="font-mono text-[10px] text-slate-500 dark:text-slate-400">
-                {shortHash(ev.hash)}
+              <div className="text-[10px] text-slate-600 dark:text-slate-300">
+                <span className="text-slate-500 dark:text-slate-400">SHA-256: </span>
+                <CopyableHash
+                  full={ev.hash}
+                  short={shortHash(ev.hash)}
+                  className="text-slate-700 dark:text-slate-200"
+                />
               </div>
               <div className="mt-1 text-slate-800 dark:text-slate-100">
                 <span className="font-medium">{ev.bizStep ?? "—"}</span>
@@ -47,8 +53,11 @@ export function TimelineWidget({ events, loading }: Props) {
                   {ev.classification}
                 </span>
               </div>
-              <div className="mt-0.5 truncate text-[11px] text-slate-600 dark:text-slate-400" title={ev.epcFirst ?? ""}>
-                {ev.epcFirst ?? "—"}
+              <div
+                className="mt-0.5 max-w-full text-[11px] text-slate-600 dark:text-slate-400"
+                title={ev.epcFirst ?? ""}
+              >
+                {ev.epcFirst ? renderTextWithLinks(ev.epcFirst) : "—"}
               </div>
               <div className="mt-1 text-[10px] text-slate-400">
                 {ev.eventTime}

@@ -62,6 +62,24 @@ export function resetGraphForTests(unlinkFile = false): void {
   }
 }
 
+/**
+ * Remove all triples from the in-memory graph and rewrite the Turtle file to
+ * prefix headers only (empty graph). Does not reload from disk afterward.
+ */
+export function clearPersistedGraph(): void {
+  graphBody = "";
+  diskLoaded = true;
+  const GRAPH_FILE = graphFilePath();
+  try {
+    const dir = path.dirname(GRAPH_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(GRAPH_FILE, HEADER, "utf-8");
+  } catch (err) {
+    console.error("[graph] Failed to clear persisted graph:", err);
+    throw err;
+  }
+}
+
 export function appendToGraph(
   turtle: string,
   hash: string,

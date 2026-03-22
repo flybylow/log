@@ -25,6 +25,7 @@ before(async () => {
 });
 
 beforeEach(() => {
+  delete process.env.DPP_GRAPH_RESET_SECRET;
   resetGraphForTests(true);
   resetStatusForTests();
 });
@@ -48,6 +49,7 @@ test("GET /status returns service metadata", async () => {
   const res = await request(app).get("/status").expect(200);
   assert.equal(res.body.service, "dpp-event");
   assert.equal(res.body.eventCount, 0);
+  assert.equal(res.body.graphResetEnabled, false);
 });
 
 test("GET / serves SPA when frontend is built", async () => {
@@ -105,4 +107,39 @@ test("graph-only skips on-chain field in response", async () => {
   const res = await request(app).post("/events").send(ev).expect(201);
   assert.equal(res.body.classification, "graph-only");
   assert.equal(res.body.iotaDigest, null);
+});
+
+test("DELETE /graph returns 404 when reset secret is not configured", async () => {
+  const res = await request(app).delete("/graph").expect(404);
+  assert.match(String(res.body.error), /not enabled/i);
+});
+
+test("DELETE /graph returns 401 when token is wrong", async () => {
+  process.env.DPP_GRAPH_RESET_SECRET = "correct-secret";
+  const res = await request(app).delete("/graph").set("Authorization", "Bearer wrong").expect(401);
+  assert.equal(res.body.error, "Unauthorized");
+});
+
+test("DELETE /graph clears persisted triples and timeline when authorized", async () => {
+  process.env.DPP_GRAPH_RESET_SECRET = "test-reset-secret";
+  await request(app).post("/events").send(validEvent).expect(201);
+  let gr = await request(app).get("/graph").expect(200);
+  assert.match(gr.text, /dpp:sha256/);
+  const tl = await request(app).get("/api/timeline").expect(200);
+  assert.equal(tl.body.events.length, 1);
+
+  await request(app)
+    .delete("/graph")
+    .set("Authorization", "Bearer test-reset-secret")
+    .expect(200);
+
+  gr = await request(app).get("/graph").expect(200);
+  assert.match(gr.text, /@prefix dpp:/);
+  assert.ok(!gr.text.includes("dpp:sha256"));
+
+  const status = await request(app).get("/status").expect(200);
+  assert.equal(status.body.eventCount, 0);
+
+  const tl2 = await request(app).get("/api/timeline").expect(200);
+  assert.equal(tl2.body.events.length, 0);
 });

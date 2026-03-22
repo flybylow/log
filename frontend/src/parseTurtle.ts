@@ -269,7 +269,8 @@ export function triplesToGraph(triples: Triple[]): {
     if (pl === "sha256" && t.objectKind === "literal") {
       const full = literalValue(t.object);
       const id = `hash:${t.subject}`;
-      ensureEntity(id, "hash", full.slice(0, 8), undefined);
+      const he = ensureEntity(id, "hash", full.slice(0, 8), undefined);
+      he.literals.sha256 = full;
       edges.push({
         id: `e-${t.subject}-sha256`,
         source: t.subject,
@@ -323,16 +324,12 @@ export function triplesToGraph(triples: Triple[]): {
       });
     }
 
-    // Other literals on event (for inspector / labels)
-    const copyLiterals = [
-      "certification",
-      "action",
-      "etimClass",
-      "etimClassDescription",
-      "brand",
-      "model",
-    ];
-    if (copyLiterals.includes(pl) && t.objectKind === "literal") {
+    // Other `dpp:*` string literals on the event (inspector / labels); sha256 handled above
+    if (
+      pred.startsWith(PREFIXES.dpp) &&
+      t.objectKind === "literal" &&
+      pl !== "sha256"
+    ) {
       const e = entities.get(t.subject);
       if (e) e.literals[pl] = literalValue(t.object);
     }

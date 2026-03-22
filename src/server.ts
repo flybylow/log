@@ -3,7 +3,8 @@ import { app } from "./app";
 
 dotenv.config();
 
-const PORT = process.env.PORT || 3000;
+// Default 3001 so local dev can run next to Next.js (3000). Set PORT in .env for hosting.
+const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
   console.log(`dpp-event running on :${PORT}`);

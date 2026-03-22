@@ -34,6 +34,15 @@ const VALID_BIZ_STEPS = [
   "unloading",
   "accepting",
   "returning",
+  /** Construction / built-environment lifecycle (Send EPCIS samples) */
+  "designing",
+  "permitting",
+  "specifying",
+  "ordering",
+  "occupying",
+  "replacing",
+  "renovating",
+  "recovering",
 ];
 
 export function validate(event: any): ValidationResult {

@@ -4,6 +4,7 @@ import {
   MiniMap,
   ReactFlow,
   ReactFlowProvider,
+  useReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import {
@@ -13,9 +14,22 @@ import {
   useState,
   type MouseEvent,
 } from "react";
+
+function AutoFitView({ nodeCount }: { nodeCount: number }) {
+  const { fitView } = useReactFlow();
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      void fitView({ padding: 0.2, duration: 280 });
+    }, 60);
+    return () => window.clearTimeout(id);
+  }, [nodeCount, fitView]);
+  return null;
+}
 import { buildFlowElements } from "./graphLayout";
 import { GraphNode } from "./GraphNodes";
 import { parseTurtleToGraph } from "./parseTurtle";
+import { ClearGraphButton } from "./ClearGraphButton";
+import { renderTextWithLinks } from "./linkify";
 import { SendEventPanel } from "./SendEventPanel";
 import { TimelineWidget } from "./TimelineWidget";
 
@@ -30,6 +44,7 @@ type StatusPayload = {
   graphSizeBytes: number;
   iotaNetwork?: string;
   lastNotarization?: string | null;
+  graphResetEnabled?: boolean;
 };
 
 const nodeTypes = { graph: GraphNode };
@@ -52,9 +67,9 @@ function useGraphStatusAndTimeline() {
     try {
       setError(null);
       const [graphRes, statusRes, timelineRes] = await Promise.all([
-        fetch("/graph"),
-        fetch("/status"),
-        fetch("/api/timeline"),
+        fetch("/graph", { cache: "no-store" }),
+        fetch("/status", { cache: "no-store" }),
+        fetch("/api/timeline", { cache: "no-store" }),
       ]);
       if (!graphRes.ok) throw new Error(`GET /graph ${graphRes.status}`);
       if (!statusRes.ok) throw new Error(`GET /status ${statusRes.status}`);
@@ -146,13 +161,19 @@ function AppInner() {
               <span>IOTA: {status.iotaNetwork ?? "—"}</span>
             </>
           )}
-          <button
-            type="button"
-            onClick={() => void reload()}
-            className="ml-auto rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-800 shadow-sm hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
-          >
-            Refresh
-          </button>
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <ClearGraphButton
+              enabled={Boolean(status?.graphResetEnabled)}
+              onCleared={() => void reload()}
+            />
+            <button
+              type="button"
+              onClick={() => void reload()}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-800 shadow-sm hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+            >
+              Refresh
+            </button>
+          </div>
         </div>
         {error && (
           <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
@@ -177,6 +198,7 @@ function AppInner() {
             defaultEdgeOptions={defaultEdgeOptions}
             proOptions={{ hideAttribution: true }}
           >
+            <AutoFitView nodeCount={nodes.length} />
             <Background gap={20} size={1} color="#e2e8f0" />
             <Controls showInteractive={false} />
             <MiniMap
@@ -197,14 +219,14 @@ function AppInner() {
           </h2>
           <dl className="mt-2 grid max-h-40 grid-cols-[auto_1fr] gap-x-3 gap-y-1 overflow-auto text-xs text-slate-700 dark:text-slate-300">
             <dt className="font-medium text-slate-500">Label</dt>
-            <dd>{selected.data.label}</dd>
+            <dd>{renderTextWithLinks(selected.data.label)}</dd>
             <dt className="font-medium text-slate-500">Kind</dt>
             <dd>{selected.data.kind}</dd>
             {selected.data.literals &&
               Object.entries(selected.data.literals).map(([k, v]) => (
                 <div key={k} className="contents">
                   <dt className="font-medium text-slate-500">{k}</dt>
-                  <dd className="break-all">{v}</dd>
+                  <dd className="break-all">{renderTextWithLinks(v)}</dd>
                 </div>
               ))}
           </dl>

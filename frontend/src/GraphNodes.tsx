@@ -1,5 +1,9 @@
 import { Handle, Position } from "@xyflow/react";
+import type { Node, NodeProps } from "@xyflow/react";
 import type { FlowNodeData } from "./graphLayout";
+import { CopyableHash, renderTextWithLinks } from "./linkify";
+
+export type GraphFlowNode = Node<FlowNodeData, "graph">;
 
 const kindStyles: Record<
   FlowNodeData["kind"],
@@ -37,13 +41,16 @@ const kindStyles: Record<
   },
 };
 
-export function GraphNode({
-  data,
-}: {
-  data: FlowNodeData;
-}) {
+export function GraphNode({ id, data }: NodeProps<GraphFlowNode>) {
   const st = kindStyles[data.kind] ?? kindStyles.other;
   const isHash = data.kind === "hash";
+  const eventUri =
+    data.kind === "event" &&
+    (id.startsWith("http://") || id.startsWith("https://"))
+      ? id
+      : undefined;
+  const resourceHref = data.resourceUrl || eventUri;
+
   return (
     <div
       className={`relative rounded-xl border px-3 py-2 shadow-sm ${st.border} ${st.bg} ${st.text} ${
@@ -53,10 +60,31 @@ export function GraphNode({
       <Handle type="target" position={Position.Left} className="!bg-slate-400" />
       <Handle type="source" position={Position.Right} className="!bg-slate-400" />
       <div className={`font-medium leading-tight ${isHash ? "text-center" : ""}`}>
-        {data.label}
+        {isHash ? (
+          <CopyableHash
+            full={data.literals?.sha256 ?? data.label}
+            short={data.label}
+            className={`nodrag ${st.text}`}
+          />
+        ) : (
+          renderTextWithLinks(data.label, "nodrag")
+        )}
       </div>
       {!isHash && data.subtitle && (
-        <div className="mt-1 truncate text-xs opacity-80">{data.subtitle}</div>
+        <div className="mt-1 truncate text-xs opacity-80">
+          {renderTextWithLinks(data.subtitle, "nodrag")}
+        </div>
+      )}
+      {!isHash && resourceHref && (
+        <a
+          href={resourceHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="nodrag mt-1 block max-w-full truncate text-[10px] font-medium text-emerald-700 underline decoration-emerald-600/40 underline-offset-2 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
+          title={resourceHref}
+        >
+          {resourceHref.length > 52 ? `${resourceHref.slice(0, 24)}…${resourceHref.slice(-20)}` : resourceHref}
+        </a>
       )}
     </div>
   );

@@ -8,7 +8,7 @@ import { transform } from "./transform";
 import { hashEvent } from "./hash";
 import { classify } from "./classify";
 import { notarize } from "./notarize";
-import { appendToGraph, getGraph } from "./graph";
+import { appendToGraph, clearPersistedGraph, getGraph } from "./graph";
 import { pushTimelineEntry, getTimeline, resetTimelineForTests } from "./recentTimeline";
 
 export const app = express();
@@ -96,6 +96,33 @@ app.get("/graph", (_req, res) => {
   res.send(turtle);
 });
 
+/** Clear all RDF triples (memory + persisted file) and reset timeline / counters. Requires DPP_GRAPH_RESET_SECRET. */
+app.delete("/graph", (req, res) => {
+  const secret = process.env.DPP_GRAPH_RESET_SECRET?.trim();
+  if (!secret) {
+    res.status(404).json({ error: "Graph reset is not enabled (set DPP_GRAPH_RESET_SECRET)." });
+    return;
+  }
+  const bearer =
+    typeof req.headers.authorization === "string" && req.headers.authorization.startsWith("Bearer ")
+      ? req.headers.authorization.slice(7).trim()
+      : "";
+  const headerToken =
+    typeof req.headers["x-dpp-graph-reset"] === "string" ? req.headers["x-dpp-graph-reset"].trim() : "";
+  if (bearer !== secret && headerToken !== secret) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  try {
+    clearPersistedGraph();
+    resetStatusForTests();
+    res.status(200).json({ ok: true, cleared: true });
+  } catch (err: any) {
+    console.error("Graph reset failed:", err);
+    res.status(500).json({ error: "Failed to clear graph", message: err.message });
+  }
+});
+
 app.get("/status", (_req, res) => {
   const turtle = getGraph();
   res.json({
@@ -106,20 +133,32 @@ app.get("/status", (_req, res) => {
     lastNotarization,
     graphSizeBytes: Buffer.byteLength(turtle, "utf-8"),
     iotaNetwork: process.env.IOTA_NETWORK || "testnet",
+    /** True when DELETE /graph is available (DPP_GRAPH_RESET_SECRET set). */
+    graphResetEnabled: Boolean(process.env.DPP_GRAPH_RESET_SECRET?.trim()),
   });
 });
 
 const frontendDist = path.join(__dirname, "..", "frontend", "dist");
+const indexHtmlPath = path.join(frontendDist, "index.html");
+
+const frontendMissingMessage =
+  "Frontend not built. From repo root: cd frontend && npm ci && npm run build && cd .. && npm run build";
+
 if (fs.existsSync(frontendDist)) {
   app.use(express.static(frontendDist));
+  // If dist/ exists but index.html was not deployed, static falls through → generic "Cannot GET /".
+  app.get("/", (_req, res) => {
+    if (fs.existsSync(indexHtmlPath)) {
+      res.sendFile(path.resolve(indexHtmlPath));
+    } else {
+      res.status(503).type("text/plain").send(
+        `${frontendMissingMessage} (expected ${path.join("frontend", "dist", "index.html")} on the server)`
+      );
+    }
+  });
 } else {
   app.get("/", (_req, res) => {
-    res
-      .status(503)
-      .type("text/plain")
-      .send(
-        "Frontend not built. From repo root: cd frontend && npm ci && npm run build && cd .. && npm run build"
-      );
+    res.status(503).type("text/plain").send(frontendMissingMessage);
   });
 }
 

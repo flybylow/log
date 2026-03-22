@@ -1,21 +1,33 @@
+import path from "path";
+import { fileURLToPath } from "url";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
+import { loadEnv } from "vite";
 import { defineConfig } from "vitest/config";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(__dirname, "..");
+
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  server: {
-    port: 5173,
-    proxy: {
-      "/graph": "http://localhost:3000",
-      "/status": "http://localhost:3000",
-      "/api": "http://localhost:3000",
-      "/events": "http://localhost:3000",
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, repoRoot, "");
+  const apiPort = env.PORT || "3001";
+  const proxyTarget = `http://127.0.0.1:${apiPort}`;
+
+  return {
+    plugins: [react(), tailwindcss()],
+    server: {
+      port: 5173,
+      proxy: {
+        "/graph": proxyTarget,
+        "/status": proxyTarget,
+        "/api": proxyTarget,
+        "/events": proxyTarget,
+      },
     },
-  },
-  test: {
-    globals: true,
-    environment: "jsdom",
-  },
+    test: {
+      globals: true,
+      environment: "jsdom",
+    },
+  };
 });

@@ -21,6 +21,8 @@ export type FlowNodeData = {
   kind: ParsedGraphEntity["kind"];
   subtitle?: string;
   literals?: Record<string, string>;
+  /** HTTP(S) URL for product / location / readPoint when present on the entity */
+  resourceUrl?: string;
 };
 
 function sortByLabel(a: string, b: string) {
@@ -49,6 +51,10 @@ export function buildFlowElements(
     const kind = e.kind;
     const subtitle =
       kind === "event" && e.literals.eventTime ? e.literals.eventTime : undefined;
+    const resourceUrl =
+      e.uri && (e.uri.startsWith("http://") || e.uri.startsWith("https://"))
+        ? e.uri
+        : undefined;
     nodes.push({
       id,
       position: { x, y },
@@ -57,6 +63,7 @@ export function buildFlowElements(
         kind,
         subtitle,
         literals: e.literals,
+        resourceUrl,
       },
       style: { width, height },
     });

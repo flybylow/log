@@ -2,6 +2,8 @@
 // Converts EPCIS 2.0 JSON-LD event to Turtle triples.
 // Uses Schema.org as base vocab, dpp: for DPP-specific terms.
 
+import { randomUUID } from "node:crypto";
+
 const PREFIXES = `@prefix schema: <https://schema.org/> .
 @prefix epcis: <https://ref.gs1.org/cbv/> .
 @prefix dpp: <https://tabulas.eu/ontology/dpp/> .
@@ -63,21 +65,12 @@ export function transform(event: any): string {
     lines.push(`  dpp:certification "${escapeTurtle(event.certification)}" ;`);
   }
 
-  // ETIM extensions (construction vertical)
-  if (event["dpp:etimClass"]) {
-    lines.push(`  dpp:etimClass "${event["dpp:etimClass"]}" ;`);
-  }
-
-  if (event["dpp:etimClassDescription"]) {
-    lines.push(`  dpp:etimClassDescription "${escapeTurtle(event["dpp:etimClassDescription"])}" ;`);
-  }
-
-  if (event["dpp:brand"]) {
-    lines.push(`  dpp:brand "${event["dpp:brand"]}" ;`);
-  }
-
-  if (event["dpp:model"]) {
-    lines.push(`  dpp:model "${event["dpp:model"]}" ;`);
+  // Any `dpp:*` string on the payload (ETIM, scenario labels, project refs, etc.)
+  for (const [k, v] of Object.entries(event)) {
+    if (!k.startsWith("dpp:") || typeof v !== "string") continue;
+    const pred = k.slice(4);
+    if (!pred) continue;
+    lines.push(`  dpp:${pred} "${escapeTurtle(v)}" ;`);
   }
 
   // Close: replace trailing semicolon with period
@@ -91,7 +84,10 @@ function eventToUri(event: any): string {
   const productId = event.epcList?.[0] || event.inputEPCList?.[0] || "unknown";
   const time = event.eventTime || new Date().toISOString();
   const step = event.bizStep || "event";
-  const encoded = encodeURIComponent(`${productId}/${step}/${time}`);
+  // One RDF subject per submission so the graph UI gets a new horizontal step each POST
+  // (same JSON payload would otherwise reuse the same URI and merge into one column).
+  const instanceId = randomUUID();
+  const encoded = encodeURIComponent(`${productId}/${step}/${time}/${instanceId}`);
   return `https://events.tabulas.eu/event/${encoded}`;
 }
 
